@@ -201,7 +201,8 @@ final class ReminderController: ObservableObject {
         let nextDate: Date
         if let last = settings.lastFireDate {
             let candidate = last.addingTimeInterval(settings.intervalSeconds)
-            nextDate = max(candidate, now)
+            // 如果候选时间已过去，则下一次触发设为“现在 + 间隔”，避免立刻重复触发
+            nextDate = candidate > now ? candidate : now.addingTimeInterval(settings.intervalSeconds)
         } else {
             nextDate = now.addingTimeInterval(settings.intervalSeconds)
         }
@@ -353,9 +354,14 @@ final class ReminderController: ObservableObject {
             backgroundOpacity: settings.overlayOpacity,
             fadeStartDelay: settings.overlayFadeStartDelay,
             fadeDuration: settings.getFadeDuration(),
-            onDismiss: { [weak self] in
+            onDismiss: { [weak self, weak window] in
                 Task { @MainActor in
-                    self?.closeOverlay()
+                    guard let self, let w = window else { return }
+                    if let current = self.overlayWindow, current === w {
+                        w.orderOut(nil)
+                        w.close()
+                        self.overlayWindow = nil
+                    }
                 }
             }
         )
