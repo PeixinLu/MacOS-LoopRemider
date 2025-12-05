@@ -49,7 +49,7 @@ struct loopRemiderApp: App {
                 NSApp.terminate(nil)
             }
         } label: {
-            Text(settings.notifEmoji.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "⏰" : settings.notifEmoji)
+            Image(systemName: settings.isRunning ? "bell.fill" : "bell")
                 .font(.system(size: 14))
         }
         .menuBarExtraStyle(.menu)

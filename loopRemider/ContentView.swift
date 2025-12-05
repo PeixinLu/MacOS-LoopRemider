@@ -21,12 +21,18 @@ final class AppSettings: ObservableObject {
         static let notifEmoji = "notifEmoji"
         static let lastFire = "lastFire"
         static let notificationMode = "notificationMode"
+        static let overlayPosition = "overlayPosition"
+        static let overlayColor = "overlayColor"
+        static let overlayOpacity = "overlayOpacity"
+        static let overlayFadeDelay = "overlayFadeDelay"
+        static let overlayFadeStartDelay = "overlayFadeStartDelay"
+        static let overlayFadeDuration = "overlayFadeDuration"
     }
 
     private let defaults = UserDefaults.standard
     private var cancellables: Set<AnyCancellable> = []
 
-    // Observable values
+    // Observable values - 基本设置
     @Published var isRunning: Bool
     @Published var intervalSeconds: Double
     @Published var notificationMode: NotificationMode
@@ -37,13 +43,35 @@ final class AppSettings: ObservableObject {
 
     @Published var lastFireEpoch: Double
     
+    // Observable values - 通知样式
+    @Published var overlayPosition: OverlayPosition
+    @Published var overlayColor: OverlayColor
+    @Published var overlayOpacity: Double
+    @Published var overlayFadeStartDelay: Double // 开始淡化的延迟时间（秒），默认2秒
+    @Published var overlayFadeDuration: Double // 淡化持续时间（秒），-1表示自动
+    
     enum NotificationMode: String, CaseIterable {
         case system = "系统通知"
         case overlay = "屏幕遮罩"
     }
+    
+    enum OverlayPosition: String, CaseIterable {
+        case topRight = "右上角"
+        case topLeft = "左上角"
+        case topCenter = "顶部居中"
+        case center = "屏幕中央"
+    }
+    
+    enum OverlayColor: String, CaseIterable {
+        case black = "黑色"
+        case blue = "蓝色"
+        case purple = "紫色"
+        case green = "绿色"
+        case orange = "橙色"
+    }
 
     init() {
-        // Load
+        // Load - 基本设置
         self.isRunning = defaults.object(forKey: Keys.isRunning) as? Bool ?? false
         self.intervalSeconds = defaults.object(forKey: Keys.intervalSeconds) as? Double ?? 1800 // 默认30分钟
         self.notifTitle = defaults.string(forKey: Keys.notifTitle) ?? "提醒"
@@ -53,8 +81,19 @@ final class AppSettings: ObservableObject {
         
         let modeRawValue = defaults.string(forKey: Keys.notificationMode) ?? NotificationMode.system.rawValue
         self.notificationMode = NotificationMode(rawValue: modeRawValue) ?? .system
+        
+        // Load - 通知样式
+        let positionRawValue = defaults.string(forKey: Keys.overlayPosition) ?? OverlayPosition.topRight.rawValue
+        self.overlayPosition = OverlayPosition(rawValue: positionRawValue) ?? .topRight
+        
+        let colorRawValue = defaults.string(forKey: Keys.overlayColor) ?? OverlayColor.black.rawValue
+        self.overlayColor = OverlayColor(rawValue: colorRawValue) ?? .black
+        
+        self.overlayOpacity = defaults.object(forKey: Keys.overlayOpacity) as? Double ?? 0.85
+        self.overlayFadeStartDelay = defaults.object(forKey: Keys.overlayFadeStartDelay) as? Double ?? 2.0 // 默认2秒后开始淡化
+        self.overlayFadeDuration = defaults.object(forKey: Keys.overlayFadeDuration) as? Double ?? -1 // -1 = 自动
 
-        // Persist changes
+        // Persist changes - 基本设置
         $isRunning.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.isRunning) }.store(in: &cancellables)
         $intervalSeconds.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.intervalSeconds) }.store(in: &cancellables)
         $notifTitle.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.notifTitle) }.store(in: &cancellables)
@@ -62,10 +101,21 @@ final class AppSettings: ObservableObject {
         $notifEmoji.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.notifEmoji) }.store(in: &cancellables)
         $lastFireEpoch.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.lastFire) }.store(in: &cancellables)
         $notificationMode.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.notificationMode) }.store(in: &cancellables)
+        
+        // Persist changes - 通知样式
+        $overlayPosition.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.overlayPosition) }.store(in: &cancellables)
+        $overlayColor.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.overlayColor) }.store(in: &cancellables)
+        $overlayOpacity.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayOpacity) }.store(in: &cancellables)
+        $overlayFadeStartDelay.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayFadeStartDelay) }.store(in: &cancellables)
+        $overlayFadeDuration.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayFadeDuration) }.store(in: &cancellables)
 
         // Guardrail: 10秒到2小时 (10 - 7200秒)
         if intervalSeconds < 10 { intervalSeconds = 10 }
         if intervalSeconds > 7200 { intervalSeconds = 7200 }
+        
+        // Guardrail: 透明度 0.3 - 1.0
+        if overlayOpacity < 0.3 { overlayOpacity = 0.3 }
+        if overlayOpacity > 1.0 { overlayOpacity = 1.0 }
     }
 
     var lastFireDate: Date? {
@@ -98,6 +148,28 @@ final class AppSettings: ObservableObject {
             } else {
                 return "\(hours) 小时 \(remainingMinutes) 分钟"
             }
+        }
+    }
+    
+    // 获取淡化持续时间（秒）
+    func getFadeDuration() -> Double {
+        if overlayFadeDuration < 0 {
+            // 自动模式：在下一个通知到来前完成淡出
+            let remainingTime = intervalSeconds - overlayFadeStartDelay
+            return max(remainingTime, 3) // 至少3秒淡出时间
+        } else {
+            return overlayFadeDuration
+        }
+    }
+    
+    // 获取颜色
+    func getOverlayColor() -> Color {
+        switch overlayColor {
+        case .black: return .black
+        case .blue: return .blue
+        case .purple: return .purple
+        case .green: return .green
+        case .orange: return .orange
         }
     }
 }
@@ -221,17 +293,43 @@ final class ReminderController: ObservableObject {
         guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
         let screenFrame = screen.visibleFrame
         
-        // 创建遮罩窗口，位于右上角
+        // 创建遮罩窗口
         let windowWidth: CGFloat = 350
         let windowHeight: CGFloat = 120
         let padding: CGFloat = 20
         
-        let windowRect = NSRect(
-            x: screenFrame.maxX - windowWidth - padding,
-            y: screenFrame.maxY - windowHeight - padding,
-            width: windowWidth,
-            height: windowHeight
-        )
+        // 根据位置设置计算窗口位置
+        let windowRect: NSRect
+        switch settings.overlayPosition {
+        case .topRight:
+            windowRect = NSRect(
+                x: screenFrame.maxX - windowWidth - padding,
+                y: screenFrame.maxY - windowHeight - padding,
+                width: windowWidth,
+                height: windowHeight
+            )
+        case .topLeft:
+            windowRect = NSRect(
+                x: screenFrame.minX + padding,
+                y: screenFrame.maxY - windowHeight - padding,
+                width: windowWidth,
+                height: windowHeight
+            )
+        case .topCenter:
+            windowRect = NSRect(
+                x: screenFrame.midX - windowWidth / 2,
+                y: screenFrame.maxY - windowHeight - padding,
+                width: windowWidth,
+                height: windowHeight
+            )
+        case .center:
+            windowRect = NSRect(
+                x: screenFrame.midX - windowWidth / 2,
+                y: screenFrame.midY - windowHeight / 2,
+                width: windowWidth,
+                height: windowHeight
+            )
+        }
         
         let window = NSWindow(
             contentRect: windowRect,
@@ -251,6 +349,10 @@ final class ReminderController: ObservableObject {
             emoji: settings.notifEmoji,
             title: settings.notifTitle,
             message: settings.notifBody,
+            backgroundColor: settings.getOverlayColor(),
+            backgroundOpacity: settings.overlayOpacity,
+            fadeStartDelay: settings.overlayFadeStartDelay,
+            fadeDuration: settings.getFadeDuration(),
             onDismiss: { [weak self] in
                 Task { @MainActor in
                     self?.closeOverlay()
@@ -278,10 +380,13 @@ struct OverlayNotificationView: View {
     let emoji: String
     let title: String
     let message: String
+    let backgroundColor: Color
+    let backgroundOpacity: Double
+    let fadeStartDelay: Double // 开始淡化的延迟
+    let fadeDuration: Double // 淡化持续时间
     let onDismiss: () -> Void
     
     @State private var opacity: Double = 1.0
-    @State private var fadeTimer: Timer?
     
     var body: some View {
         VStack(spacing: 12) {
@@ -307,7 +412,7 @@ struct OverlayNotificationView: View {
         .frame(width: 350, height: 120)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.black.opacity(0.85))
+                .fill(backgroundColor.opacity(backgroundOpacity))
                 .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
         )
         .opacity(opacity)
@@ -320,10 +425,15 @@ struct OverlayNotificationView: View {
     }
     
     private func startFadeTimer() {
-        // 3秒后开始淡出，怰10秒内逐渐变淡
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            withAnimation(.easeInOut(duration: 10)) {
+        // 在指定延迟后开始淡化
+        DispatchQueue.main.asyncAfter(deadline: .now() + fadeStartDelay) {
+            withAnimation(.easeInOut(duration: fadeDuration)) {
                 opacity = 0.1
+            }
+            
+            // 淡化完成后自动关闭
+            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
+                onDismiss()
             }
         }
     }
@@ -366,6 +476,12 @@ struct SettingsView: View {
     @State private var sendingTest = false
     @State private var inputValue: String = ""
     @State private var selectedUnit: TimeUnit = .minutes
+    @State private var selectedTab: SettingsTab = .basic
+    
+    enum SettingsTab: String, CaseIterable {
+        case basic = "基本设置"
+        case style = "通知样式"
+    }
     
     enum TimeUnit: String, CaseIterable {
         case seconds = "秒"
@@ -380,8 +496,81 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
+        VStack(spacing: 0) {
+            // Tab Selector
+            Picker("", selection: $selectedTab) {
+                ForEach(SettingsTab.allCases, id: \.self) { tab in
+                    Text(tab.rawValue).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            
+            // Content based on selected tab
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        if selectedTab == .basic {
+                            basicSettingsContent
+                        } else {
+                            styleSettingsContent
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 80) // 留出浮动按钮空间
+                }
+                
+                // 浮动测试按钮
+                VStack {
+                    Spacer()
+                    Button {
+                        sendingTest = true
+                        Task {
+                            await controller.sendTest(settings: settings)
+                            try? await Task.sleep(nanoseconds: 500_000_000)
+                            sendingTest = false
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            if sendingTest {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: "paperplane.fill")
+                                    .font(.caption)
+                            }
+                            Text(sendingTest ? "发送中..." : "发送测试通知")
+                                .font(.callout)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
+                    .disabled(sendingTest)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
+                    .background(
+                        Rectangle()
+                            .fill(.ultraThinMaterial)
+                            .shadow(color: .black.opacity(0.1), radius: 5, y: -2)
+                            .ignoresSafeArea(edges: .bottom)
+                    )
+                }
+            }
+        }
+        .frame(width: 520, height: 650)
+        .frame(minWidth: 520, maxWidth: 520, minHeight: 650, maxHeight: 650)
+        .onAppear {
+            initializeInputValue()
+        }
+    }
+    
+    // MARK: - Basic Settings Tab
+    
+    private var basicSettingsContent: some View {
+        VStack(spacing: 20) {
                 // Header
                 VStack(spacing: 8) {
                     Image(systemName: "bell.badge.fill")
@@ -646,44 +835,269 @@ struct SettingsView: View {
                 )
                 .opacity(settings.isRunning ? 0.6 : 1.0)
 
-                // Test Button Section
-                VStack(spacing: 12) {
-                    Button {
-                        sendingTest = true
-                        Task {
-                            await controller.sendTest(settings: settings)
-                            try? await Task.sleep(nanoseconds: 500_000_000)
-                            sendingTest = false
-                        }
-                    } label: {
-                        HStack {
-                            if sendingTest {
-                                ProgressView()
-                                    .controlSize(.small)
-                                    .padding(.trailing, 4)
-                            } else {
-                                Image(systemName: "paperplane.fill")
-                            }
-                            Text(sendingTest ? "发送中..." : "发送测试通知")
-                                .fontWeight(.medium)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(sendingTest)
+                Spacer(minLength: 20)
+        }
+    }
+    
+    // MARK: - Style Settings Tab
+    
+    private var styleSettingsContent: some View {
+        VStack(spacing: 20) {
+                // Header
+                VStack(spacing: 8) {
+                    Image(systemName: "paintbrush.pointed.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.pink.gradient)
+                    Text("通知样式")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    Text("自定义屏幕遮罩通知外观")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 16)
+                .padding(.top, 20)
+                
+                // Style settings only available for overlay mode
+                if settings.notificationMode == .overlay {
+                    // Position
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Label {
+                                Text("位置")
+                                    .font(.headline)
+                            } icon: {
+                                Image(systemName: "location.fill")
+                                    .foregroundStyle(.blue)
+                            }
+                            .frame(width: 100, alignment: .leading)
+                            
+                            Spacer()
+                            
+                            Picker("", selection: $settings.overlayPosition) {
+                                ForEach(AppSettings.OverlayPosition.allCases, id: \.self) { position in
+                                    Text(position.rawValue).tag(position)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .disabled(settings.isRunning)
+                            .frame(width: 340)
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.controlBackgroundColor))
+                            .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+                    )
+                    .opacity(settings.isRunning ? 0.6 : 1.0)
+                    
+                    // Color
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Label {
+                                Text("颜色")
+                                    .font(.headline)
+                            } icon: {
+                                Image(systemName: "paintpalette.fill")
+                                    .foregroundStyle(.purple)
+                            }
+                            .frame(width: 100, alignment: .leading)
+                            
+                            Spacer()
+                            
+                            Picker("", selection: $settings.overlayColor) {
+                                ForEach(AppSettings.OverlayColor.allCases, id: \.self) { color in
+                                    Text(color.rawValue).tag(color)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .disabled(settings.isRunning)
+                            .frame(width: 340)
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.controlBackgroundColor))
+                            .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+                    )
+                    .opacity(settings.isRunning ? 0.6 : 1.0)
+                    
+                    // Opacity
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Label {
+                                Text("透明度")
+                                    .font(.headline)
+                            } icon: {
+                                Image(systemName: "circle.lefthalf.filled")
+                                    .foregroundStyle(.orange)
+                            }
+                            .frame(width: 100, alignment: .leading)
+                            
+                            Spacer()
+                            
+                            Slider(value: $settings.overlayOpacity, in: 0.3...1.0, step: 0.05)
+                                .disabled(settings.isRunning)
+                                .frame(width: 280)
+                            Text(String(format: "%.0f%%", settings.overlayOpacity * 100))
+                                .font(.system(.body, design: .rounded))
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.orange)
+                                .frame(width: 50, alignment: .trailing)
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.controlBackgroundColor))
+                            .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+                    )
+                    .opacity(settings.isRunning ? 0.6 : 1.0)
+                    
+                    // 淡化延迟（开始时机）
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Label {
+                                Text("淡化延迟")
+                                    .font(.headline)
+                            } icon: {
+                                Image(systemName: "timer")
+                                    .foregroundStyle(.teal)
+                            }
+                            .frame(width: 100, alignment: .leading)
+                            
+                            Spacer()
+                            
+                            Slider(value: $settings.overlayFadeStartDelay, in: 0...10, step: 0.5)
+                                .disabled(settings.isRunning)
+                                .frame(width: 280)
+                            Text(String(format: "%.1f秒", settings.overlayFadeStartDelay))
+                                .font(.system(.body, design: .rounded))
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.teal)
+                                .frame(width: 50, alignment: .trailing)
+                        }
+                        
+                        HStack {
+                            Image(systemName: "info.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.teal.opacity(0.6))
+                            Text("通知显示后，等待多久开始淡化")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.controlBackgroundColor))
+                            .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+                    )
+                    .opacity(settings.isRunning ? 0.6 : 1.0)
+                    
+                    // 淡化持续时间
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Label {
+                                Text("淡化时长")
+                                    .font(.headline)
+                            } icon: {
+                                Image(systemName: "clock.badge.checkmark.fill")
+                                    .foregroundStyle(.green)
+                            }
+                            .frame(width: 100, alignment: .leading)
+                            
+                            Spacer()
+                        }
+                        
+                        if settings.overlayFadeDuration < 0 {
+                            HStack {
+                                Text("自动（到下次通知前淡化完毕）")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Button("手动设置") {
+                                    Task { @MainActor in
+                                        settings.overlayFadeDuration = 10
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(settings.isRunning)
+                            }
+                        } else {
+                            HStack {
+                                Slider(value: $settings.overlayFadeDuration, in: 1...120, step: 1)
+                                    .disabled(settings.isRunning)
+                                    .frame(width: 280)
+                                Text("\(Int(settings.overlayFadeDuration))秒")
+                                    .font(.system(.body, design: .rounded))
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.green)
+                                    .frame(width: 50, alignment: .trailing)
+                                Button("自动") {
+                                    Task { @MainActor in
+                                        settings.overlayFadeDuration = -1
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(settings.isRunning)
+                            }
+                        }
+                        
+                        HStack {
+                            Image(systemName: "info.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green.opacity(0.6))
+                            Text("从开始淡化到完全消失的时间")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.controlBackgroundColor))
+                            .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+                    )
+                    .opacity(settings.isRunning ? 0.6 : 1.0)
+                    
+                    if settings.isRunning {
+                        HStack(spacing: 8) {
+                            Image(systemName: "lock.fill")
+                                .foregroundStyle(.orange)
+                            Text("请先暂停才能修改样式")
+                                .font(.callout)
+                                .foregroundStyle(.orange)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.orange.opacity(0.1))
+                        )
+                    }
+                } else {
+                    // Message when system notification mode is selected
+                    VStack(spacing: 12) {
+                        Image(systemName: "bell.badge.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.secondary)
+                        Text("仅在屏幕遮罩模式下可用")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                        Text("请在基本设置中将通知方式改为屏幕遮罩")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(40)
+                }
 
                 Spacer(minLength: 20)
-            }
-            .padding(.horizontal, 20)
-        }
-        .frame(width: 520, height: 650)
-        .frame(minWidth: 520, maxWidth: 520, minHeight: 650, maxHeight: 650)
-        .onAppear {
-            initializeInputValue()
         }
     }
     
