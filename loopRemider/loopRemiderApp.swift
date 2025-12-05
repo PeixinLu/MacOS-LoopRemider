@@ -5,6 +5,13 @@ import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
     var controller: ReminderController?
     
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // 简单激活应用，用户可以手动点击菜单栏图标打开配置
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+    
     func applicationWillTerminate(_ notification: Notification) {
         // 清理定时器和通知
         Task { @MainActor in
@@ -18,15 +25,6 @@ struct loopRemiderApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var settings = AppSettings()
     @StateObject private var controller = ReminderController()
-
-    init() {
-        // 启动时自动打开设置窗口
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if let url = URL(string: "x-apple.systempreferences:") {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-            }
-        }
-    }
 
     var body: some Scene {
         // 菜单栏
