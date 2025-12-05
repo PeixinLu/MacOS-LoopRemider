@@ -54,7 +54,7 @@
 
 ## 🔧 系统要求
 
-- macOS 13.0 或更高版本
+- macOS 14.0 或更高版本
 - 支持 Apple Silicon (M1/M2/M3) 和 Intel 芯片
 
 ## 📝 开发
