@@ -52,18 +52,27 @@ struct SettingsView: View {
             .listStyle(.sidebar)
             .toolbar(removing: .sidebarToggle) // 隐藏折叠按钮
         } detail: {
-            // 右侧内容区
-            ScrollView {
-                if selectedCategory == .basic {
-                    basicSettingsContent
-                        .padding(24)
-                } else {
-                    styleSettingsContent
-                        .padding(.top, 24)
-                        .padding(.horizontal, 24)
+            // 右侧内容区 - 水平布局
+            HStack(alignment: .top, spacing: 24) {
+                // 左侧：表单区域（可滚动）
+                ScrollView {
+                    if selectedCategory == .basic {
+                        basicSettingsContent
+                            .padding(24)
+                    } else {
+                        styleSettingsContent
+                            .padding(24)
+                    }
                 }
+                .frame(width: 500)
+                
+                // 右侧：预览区域（固定不滚动）
+                previewSection
+                    .frame(width: 450)
+                    .padding(.top, 24)
+                    .padding(.trailing, 24)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(width: 1200, height: 700)
         .onAppear {
@@ -74,93 +83,71 @@ struct SettingsView: View {
     // MARK: - Basic Settings Tab
     
     private var basicSettingsContent: some View {
-        HStack(alignment: .top, spacing: 24) {
-            // 左侧：基本设置内容
-            ScrollView {
-                VStack(spacing: 20) {
-                // Header
-                VStack(spacing: 8) {
+        VStack(spacing: 20) {
+            // Header - 统一左对齐样式
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
                     Image(systemName: "bell.badge.fill")
-                        .font(.system(size: 36))
+                        .font(.system(size: 28))
                         .foregroundStyle(.blue.gradient)
                     Text("提醒设置")
-                        .font(.title2)
+                        .font(.title3)
                         .fontWeight(.semibold)
-                    Text("自定义您的循环提醒")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
                 }
-                .padding(.top, 20)
+                Text("自定义您的循环提醒")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 12)
 
-                // Start/Stop Toggle Section
+            // 1. 通知内容 Section
+            VStack(alignment: .leading, spacing: 12) {
+                Label {
+                    Text("通知内容")
+                        .font(.headline)
+                } icon: {
+                    Image(systemName: "text.bubble.fill")
+                        .foregroundStyle(.green)
+                }
+
                 VStack(spacing: 12) {
-                    HStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 8) {
-                                Image(systemName: settings.isRunning ? "play.circle.fill" : "pause.circle.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(settings.isRunning ? .green : .orange)
-                                Text(settings.isRunning ? "运行中" : "已暂停")
-                                    .font(.headline)
-                                    .foregroundStyle(settings.isRunning ? .green : .orange)
-                            }
-                            Text(settings.isRunning ? "定时提醒已启动" : "点击启动按钮开始提醒")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        Toggle("", isOn: Binding(
-                            get: { settings.isRunning },
-                            set: { newValue in
-                                settings.isRunning = newValue
-                                if newValue {
-                                    controller.start(settings: settings)
-                                } else {
-                                    controller.stop()
-                                }
-                            }
-                        ))
-                        .toggleStyle(.switch)
-                        .controlSize(.large)
-                        .labelsHidden()
-                    }
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(settings.isRunning ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .strokeBorder(settings.isRunning ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
-                            )
-                    )
-                }
-                .padding(.horizontal, 20)
-
-                // Notification Mode Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Label {
-                        Text("通知方式")
-                            .font(.headline)
-                    } icon: {
-                        Image(systemName: "bell.badge.fill")
-                            .foregroundStyle(.purple)
+                    HStack(spacing: 8) {
+                        Image(systemName: "textformat")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+                        TextField("标题", text: $settings.notifTitle)
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(settings.isRunning)
                     }
 
-                    Picker("", selection: $settings.notificationMode) {
-                        ForEach(AppSettings.NotificationMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "doc.text")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+                            .padding(.top, 6)
+                        TextField("内容", text: $settings.notifBody, axis: .vertical)
+                            .textFieldStyle(.roundedBorder)
+                            .lineLimit(2...5)
+                            .disabled(settings.isRunning)
                     }
-                    .pickerStyle(.segmented)
-                    .disabled(settings.isRunning)
-                    
+
+                    HStack(spacing: 8) {
+                        Image(systemName: "face.smiling")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+                        TextField("Emoji（显示在标题前）", text: $settings.notifEmoji)
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(settings.isRunning)
+                        Text(settings.notifEmoji.isEmpty ? "🔔" : settings.notifEmoji)
+                            .font(.title2)
+                            .frame(width: 40)
+                    }
+
                     HStack {
                         Image(systemName: "info.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.purple.opacity(0.6))
-                        Text(settings.notificationMode == .system ? "使用macOS系统通知中心" : "在屏幕右上角显示遮罩通知")
+                            .foregroundStyle(.green.opacity(0.6))
+                        Text("Emoji 使用 macOS 的 Apple Color Emoji 字体渲染")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -172,7 +159,7 @@ struct SettingsView: View {
                             Image(systemName: "lock.fill")
                                 .font(.caption)
                                 .foregroundStyle(.orange)
-                            Text("请先暂停才能修改通知方式")
+                            Text("请先暂停才能修改内容")
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                             Spacer()
@@ -180,206 +167,169 @@ struct SettingsView: View {
                         .padding(.leading, 24)
                     }
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
-                )
-                .opacity(settings.isRunning ? 0.6 : 1.0)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.controlBackgroundColor))
+                    .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+            )
+            .opacity(settings.isRunning ? 0.6 : 1.0)
 
-                // Frequency Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Label {
-                        Text("通知频率")
-                            .font(.headline)
-                    } icon: {
-                        Image(systemName: "clock.fill")
-                            .foregroundStyle(.blue)
-                    }
+            // 2. 通知频率 Section
+            VStack(alignment: .leading, spacing: 12) {
+                Label {
+                    Text("通知频率")
+                        .font(.headline)
+                } icon: {
+                    Image(systemName: "clock.fill")
+                        .foregroundStyle(.blue)
+                }
 
-                    VStack(spacing: 8) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "timer")
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20)
-                            
-                            TextField("输入间隔", text: $inputValue)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 100)
-                                .disabled(settings.isRunning)
-                                .onChange(of: inputValue) { _, newValue in
-                                    updateIntervalFromInput()
-                                }
-                            
-                            Picker("", selection: $selectedUnit) {
-                                ForEach(TimeUnit.allCases, id: \.self) { unit in
-                                    Text(unit.rawValue).tag(unit)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .frame(width: 120)
+                VStack(spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "timer")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+                        
+                        TextField("输入间隔", text: $inputValue)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 100)
                             .disabled(settings.isRunning)
-                            .onChange(of: selectedUnit) { _, _ in
+                            .onChange(of: inputValue) { _, newValue in
                                 updateIntervalFromInput()
                             }
-                            
-                            Spacer()
-                            
-                            Text(settings.formattedInterval())
-                                .font(.system(.body, design: .rounded))
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.blue)
-                                .frame(minWidth: 80, alignment: .trailing)
+                        
+                        Picker("", selection: $selectedUnit) {
+                            ForEach(TimeUnit.allCases, id: \.self) { unit in
+                                Text(unit.rawValue).tag(unit)
+                            }
                         }
+                        .pickerStyle(.segmented)
+                        .frame(width: 120)
+                        .disabled(settings.isRunning)
+                        .onChange(of: selectedUnit) { _, _ in
+                            updateIntervalFromInput()
+                        }
+                        
+                        Spacer()
+                        
+                        Text(settings.formattedInterval())
+                            .font(.system(.body, design: .rounded))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.blue)
+                            .frame(minWidth: 80, alignment: .trailing)
+                    }
 
+                    HStack {
+                        Image(systemName: "info.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.blue.opacity(0.6))
+                        Text("范围：10秒到2小时；建议 15～60 分钟")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.leading, 24)
+                    
+                    if settings.isRunning {
                         HStack {
-                            Image(systemName: "info.circle.fill")
+                            Image(systemName: "lock.fill")
                                 .font(.caption)
-                                .foregroundStyle(.blue.opacity(0.6))
-                            Text("范围：10秒到2小时；建议 15～60 分钟")
+                                .foregroundStyle(.orange)
+                            Text("请先暂停才能修改频率")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.orange)
                             Spacer()
                         }
                         .padding(.leading, 24)
-                        
-                        if settings.isRunning {
-                            HStack {
-                                Image(systemName: "lock.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                                Text("请先暂停才能修改频率")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                                Spacer()
-                            }
-                            .padding(.leading, 24)
-                        }
                     }
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
-                )
-                .opacity(settings.isRunning ? 0.6 : 1.0)
-
-                // Notification Content Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Label {
-                        Text("通知内容")
-                            .font(.headline)
-                    } icon: {
-                        Image(systemName: "text.bubble.fill")
-                            .foregroundStyle(.green)
-                    }
-
-                    VStack(spacing: 12) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "textformat")
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20)
-                            TextField("标题", text: $settings.notifTitle)
-                                .textFieldStyle(.roundedBorder)
-                                .disabled(settings.isRunning)
-                        }
-
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: "doc.text")
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20)
-                                .padding(.top, 6)
-                            TextField("内容", text: $settings.notifBody, axis: .vertical)
-                                .textFieldStyle(.roundedBorder)
-                                .lineLimit(2...5)
-                                .disabled(settings.isRunning)
-                        }
-
-                        HStack(spacing: 8) {
-                            Image(systemName: "face.smiling")
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20)
-                            TextField("Emoji（显示在标题前）", text: $settings.notifEmoji)
-                                .textFieldStyle(.roundedBorder)
-                                .disabled(settings.isRunning)
-                            Text(settings.notifEmoji.isEmpty ? "🔔" : settings.notifEmoji)
-                                .font(.title2)
-                                .frame(width: 40)
-                        }
-
-                        HStack {
-                            Image(systemName: "info.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.green.opacity(0.6))
-                            Text("Emoji 使用 macOS 的 Apple Color Emoji 字体渲染")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                        }
-                        .padding(.leading, 24)
-                        
-                        if settings.isRunning {
-                            HStack {
-                                Image(systemName: "lock.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                                Text("请先暂停才能修改内容")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                                Spacer()
-                            }
-                            .padding(.leading, 24)
-                        }
-                    }
-                }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
-                )
-                .opacity(settings.isRunning ? 0.6 : 1.0)
-
-                    Spacer(minLength: 20)
-                }
-                .padding(.vertical, 20)
             }
-            .frame(width: 500)
-            
-            // 右侧：占位空间（保持与样式设置页一致的布局）
-            Spacer()
-                .frame(width: 450)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.controlBackgroundColor))
+                    .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+            )
+            .opacity(settings.isRunning ? 0.6 : 1.0)
+
+            // 3. 通知方式 Section
+            VStack(alignment: .leading, spacing: 12) {
+                Label {
+                    Text("通知方式")
+                        .font(.headline)
+                } icon: {
+                    Image(systemName: "bell.badge.fill")
+                        .foregroundStyle(.purple)
+                }
+
+                Picker("", selection: $settings.notificationMode) {
+                    ForEach(AppSettings.NotificationMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(settings.isRunning)
+                
+                HStack {
+                    Image(systemName: "info.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.purple.opacity(0.6))
+                    Text(settings.notificationMode == .system ? "使用macOS系统通知中心" : "在屏幕右上角显示遮罩通知")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.leading, 24)
+                
+                if settings.isRunning {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text("请先暂停才能修改通知方式")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Spacer()
+                    }
+                    .padding(.leading, 24)
+                }
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.controlBackgroundColor))
+                    .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+            )
+            .opacity(settings.isRunning ? 0.6 : 1.0)
+
+            Spacer(minLength: 20)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
     
     // MARK: - Style Settings Tab
     
     private var styleSettingsContent: some View {
-        HStack(alignment: .top, spacing: 24) {
-            // 左侧：设置控制
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Header
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: "paintbrush.pointed.fill")
-                                .font(.title2)
-                                .foregroundStyle(.pink.gradient)
-                            Text("通知样式")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                        }
-                        Text("自定义屏幕遮罩通知外观")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.bottom, 8)
-                    
-                    // 样式设置仅在overlay模式下可用
-                    if settings.notificationMode == .overlay {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header - 统一左对齐样式
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "paintbrush.pointed.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.pink.gradient)
+                    Text("通知样式")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                }
+                Text("自定义屏幕遮罩通知外观")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 12)
+            
+            // 样式设置仅在overlay模式下可用
+            if settings.notificationMode == .overlay {
                         ScrollView {
                             VStack(spacing: 16) {
                                 Group {
@@ -644,90 +594,134 @@ struct SettingsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(40)
                     }
+        }
+    }
+    
+    // MARK: - Preview Section
+    
+    private var previewSection: some View {
+        VStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "eye.fill")
+                        .foregroundStyle(.blue)
+                    Text("实时预览")
+                        .font(.headline)
                 }
-            }
-            .frame(width: 500)
                 
-            // 右侧：实时预览（固定不滚动）
-            if settings.notificationMode == .overlay {
-                VStack(alignment: .center, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Image(systemName: "eye.fill")
-                                .foregroundStyle(.blue)
-                            Text("实时预览")
-                                .font(.headline)
+                // 预览容器
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.controlBackgroundColor))
+                        .shadow(color: .black.opacity(0.1), radius: 3, y: 2)
+                    
+                    // 预览通知
+                    OverlayNotificationView(
+                        emoji: settings.notifEmoji.isEmpty ? "⏰" : settings.notifEmoji,
+                        title: settings.notifTitle.isEmpty ? "提醒" : settings.notifTitle,
+                        message: settings.notifBody.isEmpty ? "起来活动一下～" : settings.notifBody,
+                        backgroundColor: settings.getOverlayColor(),
+                        backgroundOpacity: settings.overlayOpacity,
+                        fadeStartDelay: 999,
+                        fadeDuration: 1,
+                        titleFontSize: settings.overlayTitleFontSize,
+                        iconSize: settings.overlayIconSize,
+                        cornerRadius: settings.overlayCornerRadius,
+                        contentSpacing: settings.overlayContentSpacing,
+                        useBlur: settings.overlayUseBlur,
+                        blurIntensity: settings.overlayBlurIntensity,
+                        overlayWidth: settings.overlayWidth,
+                        overlayHeight: settings.overlayHeight,
+                        onDismiss: {}
+                    )
+                    .scaleEffect(0.7)
+                }
+                .frame(width: 420, height: 420)
+                
+                Text("实际显示效果可能因系统设置而略有不同")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Divider()
+                .padding(.vertical, 8)
+            
+            // 启动/暂停开关
+            VStack(spacing: 12) {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Image(systemName: settings.isRunning ? "play.circle.fill" : "pause.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(settings.isRunning ? .green : .orange)
+                            Text(settings.isRunning ? "运行中" : "已暂停")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(settings.isRunning ? .green : .orange)
                         }
-                        
-                        // 预览容器
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.controlBackgroundColor))
-                                .shadow(color: .black.opacity(0.1), radius: 3, y: 2)
-                            
-                            // 预览通知
-                            OverlayNotificationView(
-                                emoji: settings.notifEmoji.isEmpty ? "⏰" : settings.notifEmoji,
-                                title: settings.notifTitle.isEmpty ? "提醒" : settings.notifTitle,
-                                message: settings.notifBody.isEmpty ? "起来活动一下～" : settings.notifBody,
-                                backgroundColor: settings.getOverlayColor(),
-                                backgroundOpacity: settings.overlayOpacity,
-                                fadeStartDelay: 999,
-                                fadeDuration: 1,
-                                titleFontSize: settings.overlayTitleFontSize,
-                                iconSize: settings.overlayIconSize,
-                                cornerRadius: settings.overlayCornerRadius,
-                                contentSpacing: settings.overlayContentSpacing,
-                                useBlur: settings.overlayUseBlur,
-                                blurIntensity: settings.overlayBlurIntensity,
-                                overlayWidth: settings.overlayWidth,
-                                overlayHeight: settings.overlayHeight,
-                                onDismiss: {}
-                            )
-                            .scaleEffect(0.7)
-                        }
-                        .frame(width: 420, height: 420)
-                        
-                        Text("实际显示效果可能因系统设置而略有不同")
+                        Text(settings.isRunning ? "定时提醒已启动" : "点击启动开始提醒")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
                     
-                    // 测试按钮
-                    Button {
-                        sendingTest = true
-                        Task {
-                            await controller.sendTest(settings: settings)
-                            try? await Task.sleep(nanoseconds: 500_000_000)
-                            sendingTest = false
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            if sendingTest {
-                                ProgressView()
-                                    .controlSize(.small)
-                            } else {
-                                Image(systemName: "paperplane.fill")
-                                    .font(.caption)
-                            }
-                            Text(sendingTest ? "发送中..." : "发送测试通知")
-                                .font(.callout)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.regular)
-                    .disabled(sendingTest)
-                    .frame(width: 420)
-                    
                     Spacer()
+                    
+                    Toggle("", isOn: Binding(
+                        get: { settings.isRunning },
+                        set: { newValue in
+                            settings.isRunning = newValue
+                            if newValue {
+                                controller.start(settings: settings)
+                            } else {
+                                controller.stop()
+                            }
+                        }
+                    ))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
                 }
-                .frame(minWidth: 450, idealWidth: 450, maxWidth: 450)
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(settings.isRunning ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(settings.isRunning ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
+                        )
+                )
             }
+            .frame(width: 420)
+            
+            // 测试按钮
+            Button {
+                sendingTest = true
+                Task {
+                    await controller.sendTest(settings: settings)
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                    sendingTest = false
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    if sendingTest {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "paperplane.fill")
+                            .font(.caption)
+                    }
+                    Text(sendingTest ? "发送中..." : "发送测试通知")
+                        .font(.callout)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
+            .disabled(sendingTest)
+            .frame(width: 420)
+            
+            Spacer()
         }
-        .padding(.bottom, 24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
     
     // MARK: - Helper Views
