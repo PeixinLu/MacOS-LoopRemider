@@ -41,7 +41,7 @@ final class ReminderController: ObservableObject {
 
         scheduleTimer(fireAt: nextDate, settings: settings)
 
-        Task { @MainActor in
+        Task {
             await self.sendNotification(settings: settings)
         }
     }
@@ -52,7 +52,7 @@ final class ReminderController: ObservableObject {
         closeOverlay()
     }
 
-    func cleanup() async {
+    func cleanup() {
         stop()
         center.removeAllPendingNotificationRequests()
         center.removeAllDeliveredNotifications()
@@ -62,7 +62,7 @@ final class ReminderController: ObservableObject {
         let interval = settings.intervalSeconds
         let t = Timer(fire: date, interval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
-            Task { @MainActor in
+            Task {
                 await self.sendNotification(settings: settings)
             }
         }
@@ -235,7 +235,7 @@ final class ReminderController: ObservableObject {
             position: settings.overlayPosition,
             padding: padding,
             onDismiss: { [weak self, weak window] in
-                Task { @MainActor in
+                Task {
                     guard let self, let w = window else { return }
                     if let current = self.overlayWindow, current === w {
                         w.orderOut(nil)

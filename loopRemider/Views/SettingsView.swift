@@ -717,37 +717,56 @@ struct SettingsView: View {
                         .font(.headline)
                 }
                 
-                // 预览容器
+                // 预览容器 - 模拟屏幕外观
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.1), radius: 3, y: 2)
+                    // 外层：黑色边框，模拟显示器外壳
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.black)
+                        .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
                     
-                    // 预览通知
-                    OverlayNotificationView(
-                        emoji: settings.notifEmoji.isEmpty ? "⏰" : settings.notifEmoji,
-                        title: settings.notifTitle.isEmpty ? "提醒" : settings.notifTitle,
-                        message: settings.notifBody.isEmpty ? "起来活动一下～" : settings.notifBody,
-                        backgroundColor: settings.getOverlayColor(),
-                        backgroundOpacity: settings.overlayOpacity,
-                        fadeStartDelay: 999,
-                        fadeDuration: 1,
-                        titleFontSize: settings.overlayTitleFontSize,
-                        iconSize: settings.overlayIconSize,
-                        cornerRadius: settings.overlayCornerRadius,
-                        contentSpacing: settings.overlayContentSpacing,
-                        useBlur: settings.overlayUseBlur,
-                        blurIntensity: settings.overlayBlurIntensity,
-                        overlayWidth: settings.overlayWidth,
-                        overlayHeight: settings.overlayHeight,
-                        animationStyle: settings.animationStyle,
-                        position: settings.overlayPosition,
-                        padding: settings.overlayEdgePadding,
-                        onDismiss: {}
-                    )
-                    .scaleEffect(0.7)
+                    // 内层：透明的屏幕区域（使用视觉效果实现真正的透明）
+                    VisualEffectTransparentView()
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .padding(8) // 边框宽度
+                        .overlay(
+                            // 预览通知 - 固定在屏幕中央
+                            GeometryReader { geometry in
+                                let screenWidth = geometry.size.width - 16 // 减去边框
+                                let screenHeight = geometry.size.height - 16
+                                let notifWidth = settings.overlayWidth
+                                let notifHeight = settings.overlayHeight
+                                
+                                // 计算缩放比例，确保通知不超出屏幕内边框
+                                let widthScale = notifWidth > screenWidth ? screenWidth / notifWidth : 1.0
+                                let heightScale = notifHeight > screenHeight ? screenHeight / notifHeight : 1.0
+                                let scale = min(widthScale, heightScale, 1.0)
+                                
+                                OverlayNotificationView(
+                                    emoji: settings.notifEmoji.isEmpty ? "⏰" : settings.notifEmoji,
+                                    title: settings.notifTitle.isEmpty ? "提醒" : settings.notifTitle,
+                                    message: settings.notifBody.isEmpty ? "起来活动一下～" : settings.notifBody,
+                                    backgroundColor: settings.getOverlayColor(),
+                                    backgroundOpacity: settings.overlayOpacity,
+                                    fadeStartDelay: 999,
+                                    fadeDuration: 1,
+                                    titleFontSize: settings.overlayTitleFontSize * scale,
+                                    iconSize: settings.overlayIconSize * scale,
+                                    cornerRadius: settings.overlayCornerRadius * scale,
+                                    contentSpacing: settings.overlayContentSpacing * scale,
+                                    useBlur: settings.overlayUseBlur,
+                                    blurIntensity: settings.overlayBlurIntensity,
+                                    overlayWidth: settings.overlayWidth * scale,
+                                    overlayHeight: settings.overlayHeight * scale,
+                                    animationStyle: .fade, // 固定使用淡入效果，避免动画影响预览
+                                    position: .center, // 固定在中央位置
+                                    padding: 0, // 预览中不需要边距
+                                    onDismiss: {}
+                                )
+                            }
+                            .padding(8) // 确保通知在边框内
+                        )
                 }
-                .frame(width: 420, height: 420)
+                .frame(width: 400, height: 250) // 16:10 屏幕比例
                 
                 Text("实际显示效果可能因系统设置而略有不同")
                     .font(.caption2)
@@ -897,5 +916,22 @@ struct SettingsView: View {
         if seconds >= 10 && seconds <= 7200 {
             settings.intervalSeconds = seconds
         }
+    }
+}
+
+// MARK: - Visual Effect Transparent View
+// 自定义透明视觉效果视图，实现真正的窗口透明
+struct VisualEffectTransparentView: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .underWindowBackground
+        view.blendingMode = .behindWindow
+        view.state = .active
+        view.isEmphasized = false
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        // 保持设置不变
     }
 }

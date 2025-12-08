@@ -4,36 +4,24 @@ import AppKit
 // App Delegate to handle lifecycle events
 class AppDelegate: NSObject, NSApplicationDelegate {
     var controller: ReminderController?
+    var openSettingsAction: (() -> Void)?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // 简单激活应用，用户可以手动点击菜单栏图标打开配置
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        // 默认使用 accessory 模式，不在 Dock 显示
+        NSApp.setActivationPolicy(.accessory)
     }
     
     func applicationWillTerminate(_ notification: Notification) {
         // 清理定时器和通知
-        Task { @MainActor in
-            await controller?.cleanup()
-        }
+        controller?.cleanup()
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         // 当用户点击 Dock 图标或 Command+Tab 切换时，显示设置窗口
         if !flag {
-            openSettingsWindow()
+            openSettingsAction?()
         }
         return true
-    }
-    
-    private func openSettingsWindow() {
-        for window in NSApp.windows {
-            if window.title == "配置" || window.identifier?.rawValue == "settings" {
-                window.makeKeyAndOrderFront(nil)
-                return
-            }
-        }
     }
 }
 
@@ -43,6 +31,7 @@ struct loopRemiderApp: App {
     @StateObject private var settings = AppSettings()
     @StateObject private var controller = ReminderController()
     @Environment(\.openWindow) private var openWindow
+    @State private var settingsWindowOpen = false
 
     var body: some Scene {
         // 菜单栏
@@ -58,11 +47,7 @@ struct loopRemiderApp: App {
             }
 
             Button("配置…") {
-                openWindow(id: "settings")
-                // 延迟激活以确保窗口已创建
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    activateSettingsWindow()
-                }
+                openSettingsWindow()
             }
             .keyboardShortcut(",", modifiers: .command)
 
@@ -84,32 +69,41 @@ struct loopRemiderApp: App {
                 .environmentObject(controller)
                 .onAppear {
                     appDelegate.controller = controller
+                    appDelegate.openSettingsAction = openSettingsWindow
+                    settingsWindowOpen = true
+                    // 切换到 regular 模式，显示 Dock 图标
+                    NSApp.setActivationPolicy(.regular)
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+                .onDisappear {
+                    settingsWindowOpen = false
+                    // 切换回 accessory 模式，隐藏 Dock 图标
+                    NSApp.setActivationPolicy(.accessory)
                 }
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultPosition(.center)
+        .defaultSize(width: 1200, height: 700)
         .commands {
             CommandGroup(replacing: .newItem) { }
         }
     }
     
-    // 激活设置窗口
-    private func activateSettingsWindow() {
-        // 激活应用
-        NSApp.activate(ignoringOtherApps: true)
-        
-        // 查找设置窗口
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            if let settingsWindow = NSApp.windows.first(where: { $0.title == "配置" || $0.identifier?.rawValue == "settings" }) {
-                settingsWindow.makeKeyAndOrderFront(nil)
-                settingsWindow.orderFrontRegardless()
-                settingsWindow.level = .floating
-                
-                // 重置窗口层级（避免一直置顶）
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    settingsWindow.level = .normal
-                }
+    // 打开设置窗口
+    func openSettingsWindow() {
+        // 先查找是否已有窗口
+        if let existingWindow = NSApp.windows.first(where: { $0.title == "配置" || $0.identifier?.rawValue == "settings" }) {
+            // 切换到 regular 模式
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+            existingWindow.makeKeyAndOrderFront(nil)
+            existingWindow.orderFrontRegardless()
+        } else {
+            // 创建新窗口
+            openWindow(id: "settings")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NSApp.activate(ignoringOtherApps: true)
             }
         }
     }
