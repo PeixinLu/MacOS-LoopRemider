@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var controller: ReminderController
@@ -14,6 +15,11 @@ struct SettingsView: View {
     @State private var inputValue: String = ""
     @State private var selectedUnit: TimeUnit = .minutes
     @State private var selectedCategory: SettingsCategory = .basic
+    @State private var countdownText: String = ""
+    @State private var progressValue: Double = 0.0
+    
+    // 定时器 Publisher，每秒触发
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     enum SettingsCategory: String, CaseIterable, Identifiable {
         case basic = "基本设置"
@@ -82,6 +88,16 @@ struct SettingsView: View {
         .frame(width: 1200, height: 700)
         .onAppear {
             initializeInputValue()
+            // 如果已在运行，立即更新倒计时
+            if settings.isRunning {
+                updateCountdown()
+            }
+        }
+        .onReceive(timer) { _ in
+            // 每秒更新倒计时
+            if settings.isRunning {
+                updateCountdown()
+            }
         }
     }
     
@@ -116,36 +132,39 @@ struct SettingsView: View {
                 }
 
                 VStack(spacing: 12) {
+                    // 标题
                     HStack(spacing: 8) {
-                        Image(systemName: "textformat")
+                        Text("标题")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .frame(width: 20)
-                        TextField("标题", text: $settings.notifTitle)
+                            .frame(width: 60, alignment: .leading)
+                        TextField("输入标题", text: $settings.notifTitle)
                             .textFieldStyle(.roundedBorder)
                             .disabled(settings.isRunning)
                     }
 
+                    // 描述/内容
                     HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "doc.text")
+                        Text("描述")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .frame(width: 20)
+                            .frame(width: 60, alignment: .leading)
                             .padding(.top, 6)
-                        TextField("内容", text: $settings.notifBody, axis: .vertical)
+                        TextField("输入描述内容", text: $settings.notifBody, axis: .vertical)
                             .textFieldStyle(.roundedBorder)
                             .lineLimit(2...5)
                             .disabled(settings.isRunning)
                     }
 
+                    // Emoji图标
                     HStack(spacing: 8) {
-                        Image(systemName: "face.smiling")
+                        Text("图标")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .frame(width: 20)
+                            .frame(width: 60, alignment: .leading)
                         TextField("Emoji（显示在标题前）", text: $settings.notifEmoji)
                             .textFieldStyle(.roundedBorder)
                             .disabled(settings.isRunning)
-                        Text(settings.notifEmoji.isEmpty ? "🔔" : settings.notifEmoji)
-                            .font(.title2)
-                            .frame(width: 40)
                     }
 
                     HStack {
@@ -414,6 +433,20 @@ struct SettingsView: View {
                                                 .font(.system(.body, design: .rounded))
                                                 .fontWeight(.medium)
                                                 .foregroundStyle(.purple)
+                                                .frame(width: 50)
+                                        }
+                                    }
+                                    
+                                    // 文本字号
+                                    settingRow(icon: "text.alignleft", iconColor: .pink, title: "文本字号") {
+                                        HStack(spacing: 8) {
+                                            Slider(value: $settings.overlayBodyFontSize, in: 10...24, step: 1)
+                                                .disabled(settings.isRunning)
+                                                .frame(width: 120)
+                                            Text(String(format: "%.0f", settings.overlayBodyFontSize))
+                                                .font(.system(.body, design: .rounded))
+                                                .fontWeight(.medium)
+                                                .foregroundStyle(.pink)
                                                 .frame(width: 50)
                                         }
                                     }
@@ -742,14 +775,15 @@ struct SettingsView: View {
                                 let scale = min(widthScale, heightScale, 1.0)
                                 
                                 OverlayNotificationView(
-                                    emoji: settings.notifEmoji.isEmpty ? "⏰" : settings.notifEmoji,
-                                    title: settings.notifTitle.isEmpty ? "提醒" : settings.notifTitle,
-                                    message: settings.notifBody.isEmpty ? "起来活动一下～" : settings.notifBody,
+                                    emoji: settings.notifEmoji,
+                                    title: settings.notifTitle,
+                                    message: settings.notifBody,
                                     backgroundColor: settings.getOverlayColor(),
                                     backgroundOpacity: settings.overlayOpacity,
                                     fadeStartDelay: 999,
                                     fadeDuration: 1,
                                     titleFontSize: settings.overlayTitleFontSize * scale,
+                                    bodyFontSize: settings.overlayBodyFontSize * scale,
                                     iconSize: settings.overlayIconSize * scale,
                                     cornerRadius: settings.overlayCornerRadius * scale,
                                     contentSpacing: settings.overlayContentSpacing * scale,
@@ -789,9 +823,10 @@ struct SettingsView: View {
                                 .fontWeight(.semibold)
                                 .foregroundStyle(settings.isRunning ? .green : .orange)
                         }
-                        Text(settings.isRunning ? "定时提醒已启动" : "点击启动开始提醒")
+                        Text(settings.isRunning ? countdownText : "点击启动开始提醒")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                            .monospacedDigit() // 等宽数字，避免跳动
                     }
                     
                     Spacer()
@@ -802,8 +837,17 @@ struct SettingsView: View {
                             settings.isRunning = newValue
                             if newValue {
                                 controller.start(settings: settings)
+                                // 启动时先将进度条归零，然后立即更新
+                                progressValue = 0.0
+                                countdownText = ""
+                                // 稍微延迟一下，确保 lastFireDate 已更新
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    updateCountdown()
+                                }
                             } else {
                                 controller.stop()
+                                countdownText = ""
+                                progressValue = 0.0
                             }
                         }
                     ))
@@ -812,12 +856,31 @@ struct SettingsView: View {
                 }
                 .padding(12)
                 .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(settings.isRunning ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(settings.isRunning ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
-                        )
+                    ZStack(alignment: .leading) {
+                        // 背景色
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(settings.isRunning ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                        
+                        // 进度条（仅运行时显示）
+                        if settings.isRunning {
+                            GeometryReader { geometry in
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.green.opacity(0.25), Color.green.opacity(0.15)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(width: geometry.size.width * progressValue)
+                                    .animation(.linear(duration: 0.3), value: progressValue) // 平滑过渡
+                            }
+                        }
+                        
+                        // 边框
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(settings.isRunning ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
+                    }
                 )
             }
             .frame(width: 420)
@@ -847,7 +910,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
-            .disabled(sendingTest)
+            .disabled(sendingTest || settings.isRunning) // 运行时禁用测试按钮
             .frame(width: 420)
             
             Spacer()
@@ -915,6 +978,47 @@ struct SettingsView: View {
         // 限制范围：10秒到7200秒(2小时)
         if seconds >= 10 && seconds <= 7200 {
             settings.intervalSeconds = seconds
+        }
+    }
+    
+    // MARK: - Countdown Timer
+    
+    private func updateCountdown() {
+        guard settings.isRunning else {
+            countdownText = ""
+            progressValue = 0.0
+            return
+        }
+        
+        // 计算下次通知时间
+        let now = Date()
+        let lastFire = settings.lastFireDate ?? now
+        let nextFire = lastFire.addingTimeInterval(settings.intervalSeconds)
+        let remaining = nextFire.timeIntervalSince(now)
+        
+        // 如果已超时或剩余时间小于1秒，显示将立即发送
+        if remaining <= 1.0 {
+            countdownText = "下次通知：即将发送..."
+            progressValue = 1.0
+            return
+        }
+        
+        // 计算进度（0-1）
+        let elapsed = settings.intervalSeconds - remaining
+        progressValue = max(0, min(1.0, elapsed / settings.intervalSeconds))
+        
+        // 格式化倒计时文本
+        let seconds = Int(remaining)
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let secs = seconds % 60
+        
+        if hours > 0 {
+            countdownText = String(format: "下次通知：%d:%02d:%02d", hours, minutes, secs)
+        } else if minutes > 0 {
+            countdownText = String(format: "下次通知：%d:%02d", minutes, secs)
+        } else {
+            countdownText = String(format: "下次通知：%d秒", secs)
         }
     }
 }

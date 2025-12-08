@@ -16,6 +16,7 @@ struct OverlayNotificationView: View {
     let fadeStartDelay: Double
     let fadeDuration: Double
     let titleFontSize: Double
+    let bodyFontSize: Double
     let iconSize: Double
     let cornerRadius: Double
     let contentSpacing: Double
@@ -34,21 +35,27 @@ struct OverlayNotificationView: View {
     
     var body: some View {
         GeometryReader { geometry in
+            // 计算是否需要文字阴影（对比度较低时）
+            let needsTextShadow = shouldApplyTextShadow(backgroundColor: backgroundColor)
+            
             // 通知卡片
             VStack(spacing: contentSpacing) {
                 HStack(spacing: contentSpacing) {
                     Text(emoji.isEmpty ? "⏰" : emoji)
                         .font(.system(size: iconSize))
+                        .shadow(color: needsTextShadow ? .black.opacity(0.3) : .clear, radius: 2, x: 0, y: 1)
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title.isEmpty ? "提醒" : title)
                             .font(.system(size: titleFontSize, weight: .semibold))
                             .foregroundColor(.white)
+                            .shadow(color: needsTextShadow ? .black.opacity(0.5) : .clear, radius: 2, x: 0, y: 1)
                         
-                        Text(message)
-                            .font(.body)
+                        Text(message.isEmpty ? "起来活动一下～" : message)
+                            .font(.system(size: bodyFontSize))
                             .foregroundColor(.white.opacity(0.9))
                             .lineLimit(2)
+                            .shadow(color: needsTextShadow ? .black.opacity(0.4) : .clear, radius: 2, x: 0, y: 1)
                     }
                     
                     Spacer()
@@ -59,11 +66,14 @@ struct OverlayNotificationView: View {
             .background(
                 ZStack {
                     if useBlur {
+                        // 模糊背景
                         VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
                             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        // 颜色叠加层（保证颜色选择生效）
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(backgroundColor.opacity(backgroundOpacity * blurIntensity * 0.7))
+                            .fill(backgroundColor.opacity(backgroundOpacity * blurIntensity))
                     } else {
+                        // 纯色背景
                         RoundedRectangle(cornerRadius: cornerRadius)
                             .fill(backgroundColor.opacity(backgroundOpacity))
                     }
@@ -237,6 +247,17 @@ struct OverlayNotificationView: View {
         case fromRight
         case fromTop
         case fromBottom
+    }
+    
+    // MARK: - 对比度检测
+    
+    /// 判断是否需要应用文字阴影（基于背景色亮度）
+    private func shouldApplyTextShadow(backgroundColor: Color) -> Bool {
+        let components = backgroundColor.components()
+        // 计算相对亮度（感知亮度）
+        let luminance = 0.299 * components.red + 0.587 * components.green + 0.114 * components.blue
+        // 当亮度大于 0.5 时（偏亮色），需要阴影以增强对比度
+        return luminance > 0.5
     }
 }
 

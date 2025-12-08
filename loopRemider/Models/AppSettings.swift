@@ -38,6 +38,7 @@ final class AppSettings: ObservableObject {
         static let overlayCustomColorR = "overlayCustomColorR"
         static let overlayCustomColorG = "overlayCustomColorG"
         static let overlayCustomColorB = "overlayCustomColorB"
+        static let overlayBodyFontSize = "overlayBodyFontSize"
     }
 
     private let defaults = UserDefaults.standard
@@ -73,6 +74,7 @@ final class AppSettings: ObservableObject {
     @Published var overlayWidth: Double
     @Published var overlayHeight: Double
     @Published var overlayCustomColor: Color
+    @Published var overlayBodyFontSize: Double
     
     enum NotificationMode: String, CaseIterable {
         case system = "系统通知"
@@ -142,6 +144,7 @@ final class AppSettings: ObservableObject {
         self.overlayBlurIntensity = defaults.object(forKey: Keys.overlayBlurIntensity) as? Double ?? 0.5
         self.overlayWidth = defaults.object(forKey: Keys.overlayWidth) as? Double ?? 350.0
         self.overlayHeight = defaults.object(forKey: Keys.overlayHeight) as? Double ?? 120.0
+        self.overlayBodyFontSize = defaults.object(forKey: Keys.overlayBodyFontSize) as? Double ?? 14.0
         
         let r = defaults.object(forKey: Keys.overlayCustomColorR) as? Double ?? 0.5
         let g = defaults.object(forKey: Keys.overlayCustomColorG) as? Double ?? 0.5
@@ -175,6 +178,7 @@ final class AppSettings: ObservableObject {
         $overlayBlurIntensity.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayBlurIntensity) }.store(in: &cancellables)
         $overlayWidth.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayWidth) }.store(in: &cancellables)
         $overlayHeight.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayHeight) }.store(in: &cancellables)
+        $overlayBodyFontSize.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayBodyFontSize) }.store(in: &cancellables)
         $overlayCustomColor.dropFirst().sink { [weak self] color in
             guard let self else { return }
             let components = color.components()

@@ -224,6 +224,7 @@ final class ReminderController: ObservableObject {
             fadeStartDelay: settings.overlayFadeStartDelay,
             fadeDuration: settings.getFadeDuration(),
             titleFontSize: settings.overlayTitleFontSize,
+            bodyFontSize: settings.overlayBodyFontSize,
             iconSize: settings.overlayIconSize,
             cornerRadius: settings.overlayCornerRadius,
             contentSpacing: settings.overlayContentSpacing,
