@@ -13,7 +13,7 @@
 
 ## 📸 预览
 
-![](Assets/setting-view.png)
+![](Assets/setting-view-2.png)
 
 ![](Assets/preview.gif)
 
