@@ -22,8 +22,10 @@ final class AppSettings: ObservableObject {
         static let overlayColor = "overlayColor"
         static let overlayOpacity = "overlayOpacity"
         static let overlayFadeDelay = "overlayFadeDelay"
-        static let overlayFadeStartDelay = "overlayFadeStartDelay"
-        static let overlayFadeDuration = "overlayFadeDuration"
+        static let overlayStayDuration = "overlayStayDuration" // 停留时间（原 overlayFadeStartDelay）
+        static let overlayEnableFadeOut = "overlayEnableFadeOut" // 是否启用渐透明
+        static let overlayFadeOutDelay = "overlayFadeOutDelay" // 变淡延迟
+        static let overlayFadeOutDuration = "overlayFadeOutDuration" // 变淡持续时间（原 overlayFadeDuration）
         static let animationStyle = "animationStyle"
         // 新增样式配置
         static let overlayTitleFontSize = "overlayTitleFontSize"
@@ -59,8 +61,10 @@ final class AppSettings: ObservableObject {
     @Published var overlayPosition: OverlayPosition
     @Published var overlayColor: OverlayColor
     @Published var overlayOpacity: Double
-    @Published var overlayFadeStartDelay: Double // 持续时间
-    @Published var overlayFadeDuration: Double // 动画时长
+    @Published var overlayStayDuration: Double // 停留时间
+    @Published var overlayEnableFadeOut: Bool // 是否启用渐透明
+    @Published var overlayFadeOutDelay: Double // 变淡延迟
+    @Published var overlayFadeOutDuration: Double // 变淡持续时间
     @Published var animationStyle: AnimationStyle
     
     // 新增样式配置
@@ -128,8 +132,10 @@ final class AppSettings: ObservableObject {
         self.overlayColor = OverlayColor(rawValue: colorRawValue) ?? .black
         
         self.overlayOpacity = defaults.object(forKey: Keys.overlayOpacity) as? Double ?? 0.85
-        self.overlayFadeStartDelay = defaults.object(forKey: Keys.overlayFadeStartDelay) as? Double ?? 2.0
-        self.overlayFadeDuration = defaults.object(forKey: Keys.overlayFadeDuration) as? Double ?? -1
+        self.overlayStayDuration = defaults.object(forKey: Keys.overlayStayDuration) as? Double ?? 5.0
+        self.overlayEnableFadeOut = defaults.object(forKey: Keys.overlayEnableFadeOut) as? Bool ?? false
+        self.overlayFadeOutDelay = defaults.object(forKey: Keys.overlayFadeOutDelay) as? Double ?? 2.0
+        self.overlayFadeOutDuration = defaults.object(forKey: Keys.overlayFadeOutDuration) as? Double ?? 2.0
         
         let animationRawValue = defaults.string(forKey: Keys.animationStyle) ?? AnimationStyle.fade.rawValue
         self.animationStyle = AnimationStyle(rawValue: animationRawValue) ?? .fade
@@ -164,8 +170,10 @@ final class AppSettings: ObservableObject {
         $overlayPosition.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.overlayPosition) }.store(in: &cancellables)
         $overlayColor.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.overlayColor) }.store(in: &cancellables)
         $overlayOpacity.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayOpacity) }.store(in: &cancellables)
-        $overlayFadeStartDelay.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayFadeStartDelay) }.store(in: &cancellables)
-        $overlayFadeDuration.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayFadeDuration) }.store(in: &cancellables)
+        $overlayStayDuration.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayStayDuration) }.store(in: &cancellables)
+        $overlayEnableFadeOut.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayEnableFadeOut) }.store(in: &cancellables)
+        $overlayFadeOutDelay.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayFadeOutDelay) }.store(in: &cancellables)
+        $overlayFadeOutDuration.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayFadeOutDuration) }.store(in: &cancellables)
         $animationStyle.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.animationStyle) }.store(in: &cancellables)
         
         // Persist changes - 新增样式配置
@@ -194,6 +202,34 @@ final class AppSettings: ObservableObject {
         // Guardrail: 透明度 0.3 - 1.0
         if overlayOpacity < 0.3 { overlayOpacity = 0.3 }
         if overlayOpacity > 1.0 { overlayOpacity = 1.0 }
+        
+        // Guardrail: 停留时间、变淡延迟、变淡持续时间
+        validateTimingSettings()
+    }
+    
+    // 验证并调整时间相关设置
+    func validateTimingSettings() {
+        // 最大停留时间 = 下次通知到来时间 - 过渡动画时间
+        let transitionTime: Double = 1.0 // 进入/退出动画时间
+        let maxStayDuration = intervalSeconds - transitionTime
+        if overlayStayDuration > maxStayDuration {
+            overlayStayDuration = max(1.0, maxStayDuration)
+        }
+        if overlayStayDuration < 1.0 { overlayStayDuration = 1.0 }
+        
+        // 最大变淡延迟 = 停留时间 - 变淡持续时间
+        let maxFadeOutDelay = overlayStayDuration - overlayFadeOutDuration
+        if overlayFadeOutDelay > maxFadeOutDelay {
+            overlayFadeOutDelay = max(0, maxFadeOutDelay)
+        }
+        if overlayFadeOutDelay < 0 { overlayFadeOutDelay = 0 }
+        
+        // 最大变淡持续时间 = 停留时间 - 变淡延迟
+        let maxFadeOutDuration = overlayStayDuration - overlayFadeOutDelay
+        if overlayFadeOutDuration > maxFadeOutDuration {
+            overlayFadeOutDuration = max(0.5, maxFadeOutDuration)
+        }
+        if overlayFadeOutDuration < 0.5 { overlayFadeOutDuration = 0.5 }
     }
 
     var lastFireDate: Date? {
@@ -228,13 +264,13 @@ final class AppSettings: ObservableObject {
         }
     }
     
-    func getFadeDuration() -> Double {
-        if overlayFadeDuration < 0 {
-            let remainingTime = intervalSeconds - overlayFadeStartDelay
-            return max(remainingTime, 3)
-        } else {
-            return overlayFadeDuration
-        }
+    func getEffectiveFadeOutDuration() -> Double {
+        guard overlayEnableFadeOut else { return 0 }
+        return overlayFadeOutDuration
+    }
+    
+    func getTotalDisplayDuration() -> Double {
+        return overlayStayDuration
     }
     
     func getOverlayColor() -> Color {

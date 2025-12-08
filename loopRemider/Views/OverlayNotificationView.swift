@@ -13,8 +13,10 @@ struct OverlayNotificationView: View {
     let message: String
     let backgroundColor: Color
     let backgroundOpacity: Double
-    let fadeStartDelay: Double
-    let fadeDuration: Double
+    let stayDuration: Double // 停留时间
+    let enableFadeOut: Bool // 是否启用渐透明
+    let fadeOutDelay: Double // 变淡延迟
+    let fadeOutDuration: Double // 变淡持续时间
     let titleFontSize: Double
     let bodyFontSize: Double
     let iconSize: Double
@@ -184,15 +186,34 @@ struct OverlayNotificationView: View {
     }
     
     private func startExitTimer(containerSize: CGSize) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + fadeStartDelay) {
-            applyExitAnimation(containerSize: containerSize)
+        if enableFadeOut {
+            // 启用渐透明：先停留，然后开始变淡
+            DispatchQueue.main.asyncAfter(deadline: .now() + fadeOutDelay) {
+                applyFadeOutAnimation()
+            }
+            // 总时间后关闭
+            DispatchQueue.main.asyncAfter(deadline: .now() + stayDuration) {
+                onDismiss()
+            }
+        } else {
+            // 不启用渐透明：到时间后直接执行退出动画
+            DispatchQueue.main.asyncAfter(deadline: .now() + stayDuration) {
+                applyExitAnimation(containerSize: containerSize)
+            }
+        }
+    }
+    
+    // 渐透明动画
+    private func applyFadeOutAnimation() {
+        withAnimation(.linear(duration: fadeOutDuration)) {
+            opacity = 0.0
         }
     }
     
     private func applyExitAnimation(containerSize: CGSize) {
         switch animationStyle {
         case .fade:
-            withAnimation(.easeInOut(duration: fadeDuration)) {
+            withAnimation(.easeInOut(duration: 0.3)) {
                 opacity = 0.0
                 scale = 0.95
             }
@@ -200,7 +221,7 @@ struct OverlayNotificationView: View {
             let direction = slideDirectionForPosition()
             let extra: CGFloat = 60
             
-            withAnimation(.easeIn(duration: fadeDuration)) {
+            withAnimation(.easeIn(duration: 0.3)) {
                 opacity = 0.0
                 switch direction {
                 case .fromLeft:
@@ -214,13 +235,13 @@ struct OverlayNotificationView: View {
                 }
             }
         case .scale:
-            withAnimation(.easeIn(duration: fadeDuration)) {
+            withAnimation(.easeIn(duration: 0.3)) {
                 scale = 0.5
                 opacity = 0.0
             }
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration + 0.1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             onDismiss()
         }
     }

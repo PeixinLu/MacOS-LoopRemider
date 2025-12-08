@@ -1,0 +1,300 @@
+//
+//  BasicSettingsView.swift
+//  loopRemider
+//
+//  Created by 数源 on 2025/12/8.
+//
+
+import SwiftUI
+
+struct BasicSettingsView: View {
+    @EnvironmentObject private var settings: AppSettings
+    
+    @Binding var inputValue: String
+    @Binding var selectedUnit: TimeUnit
+    
+    enum TimeUnit: String, CaseIterable {
+        case seconds = "秒"
+        case minutes = "分钟"
+        
+        var multiplier: Double {
+            switch self {
+            case .seconds: return 1
+            case .minutes: return 60
+            }
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Header - 统一左对齐样式
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "bell.badge.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.blue.gradient)
+                    Text("提醒设置")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                }
+                Text("自定义您的循环提醒")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 12)
+
+            // 1. 通知内容 Section
+            notificationContentSection
+            
+            // 2. 通知频率 Section
+            notificationIntervalSection
+            
+            // 3. 通知方式 Section
+            notificationModeSection
+
+            Spacer(minLength: 20)
+        }
+    }
+    
+    // MARK: - Notification Content Section
+    
+    private var notificationContentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                Text("通知内容")
+                    .font(.headline)
+            } icon: {
+                Image(systemName: "text.bubble.fill")
+                    .foregroundStyle(.green)
+            }
+
+            VStack(spacing: 12) {
+                // 标题
+                HStack(spacing: 8) {
+                    Text("标题")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 60, alignment: .leading)
+                    TextField("输入标题", text: $settings.notifTitle)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(settings.isRunning)
+                }
+
+                // 描述/内容
+                HStack(alignment: .top, spacing: 8) {
+                    Text("描述")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 60, alignment: .leading)
+                        .padding(.top, 6)
+                    TextField("输入描述内容", text: $settings.notifBody, axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .lineLimit(2...5)
+                        .disabled(settings.isRunning)
+                }
+
+                // Emoji图标
+                HStack(spacing: 8) {
+                    Text("图标")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 60, alignment: .leading)
+                    TextField("Emoji（显示在标题前）", text: $settings.notifEmoji)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(settings.isRunning)
+                }
+
+                HStack {
+                    Image(systemName: "info.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.green.opacity(0.6))
+                    Text("Emoji 使用 macOS 的 Apple Color Emoji 字体渲染")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.leading, 24)
+                
+                if settings.isRunning {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text("请先暂停才能修改内容")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Spacer()
+                    }
+                    .padding(.leading, 24)
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        )
+        .opacity(settings.isRunning ? 0.6 : 1.0)
+    }
+    
+    // MARK: - Notification Interval Section
+    
+    private var notificationIntervalSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                Text("通知频率")
+                    .font(.headline)
+            } icon: {
+                Image(systemName: "clock.fill")
+                    .foregroundStyle(.blue)
+            }
+
+            VStack(spacing: 8) {
+                HStack(spacing: 12) {
+                    Image(systemName: "timer")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 20)
+                    
+                    TextField("输入间隔", text: $inputValue)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 100)
+                        .disabled(settings.isRunning)
+                        .onChange(of: inputValue) { _, newValue in
+                            updateIntervalFromInput()
+                        }
+                    
+                    Picker("", selection: $selectedUnit) {
+                        ForEach(TimeUnit.allCases, id: \.self) { unit in
+                            Text(unit.rawValue).tag(unit)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 120)
+                    .disabled(settings.isRunning)
+                    .onChange(of: selectedUnit) { _, _ in
+                        updateIntervalFromInput()
+                    }
+                    
+                    Spacer()
+                    
+                    Text(settings.formattedInterval())
+                        .font(.system(.body, design: .rounded))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.blue)
+                        .frame(minWidth: 80, alignment: .trailing)
+                }
+
+                HStack {
+                    Image(systemName: "info.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.blue.opacity(0.6))
+                    Text("范围：10秒到2小时；建议 15～60 分钟")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.leading, 24)
+                
+                if settings.isRunning {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text("请先暂停才能修改频率")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Spacer()
+                    }
+                    .padding(.leading, 24)
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        )
+        .opacity(settings.isRunning ? 0.6 : 1.0)
+    }
+    
+    // MARK: - Notification Mode Section
+    
+    private var notificationModeSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                Text("通知方式")
+                    .font(.headline)
+            } icon: {
+                Image(systemName: "bell.badge.fill")
+                    .foregroundStyle(.purple)
+            }
+
+            Picker("", selection: $settings.notificationMode) {
+                ForEach(AppSettings.NotificationMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(settings.isRunning)
+            
+            HStack {
+                Image(systemName: "info.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.purple.opacity(0.6))
+                Text(settings.notificationMode == .system ? "使用macOS系统通知中心" : "在屏幕右上角显示遮罩通知")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.leading, 24)
+            
+            if settings.isRunning {
+                HStack {
+                    Image(systemName: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    Text("请先暂停才能修改通知方式")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    Spacer()
+                }
+                .padding(.leading, 24)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        )
+        .opacity(settings.isRunning ? 0.6 : 1.0)
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func updateIntervalFromInput() {
+        guard let value = Double(inputValue), value > 0 else {
+            return
+        }
+        
+        var seconds = value * selectedUnit.multiplier
+        
+        // 自动修正：小于10秒则设为10秒
+        if seconds < 10 {
+            seconds = 10
+            // 更新输入框显示
+            if selectedUnit == .seconds {
+                inputValue = "10"
+            } else {
+                inputValue = String(format: "%.1f", 10 / 60.0)
+            }
+        }
+        
+        // 限制范围：10秒到7200秒(2小时)
+        if seconds >= 10 && seconds <= 7200 {
+            settings.intervalSeconds = seconds
+        }
+    }
+}
