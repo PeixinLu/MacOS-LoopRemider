@@ -126,56 +126,78 @@ final class ReminderController: ObservableObject {
         let windowHeight: CGFloat = settings.overlayHeight
         let padding: CGFloat = settings.overlayEdgePadding
         
+        // 为动画添加缓冲区，避免裁切感
+        let buffer: CGFloat = 100
+        
+        // 窗口尺寸包含缓冲区
+        let expandedWidth: CGFloat
+        let expandedHeight: CGFloat
+        
+        // 窗口位置：贴靠屏幕边缘，但内容保留padding
         let windowRect: NSRect
         switch settings.overlayPosition {
         case .topLeft:
+            expandedWidth = windowWidth + buffer
+            expandedHeight = windowHeight + buffer
             windowRect = NSRect(
-                x: screenFrame.minX + padding,
-                y: screenFrame.maxY - windowHeight - padding,
-                width: windowWidth,
-                height: windowHeight
+                x: screenFrame.minX,
+                y: screenFrame.maxY - expandedHeight,
+                width: expandedWidth,
+                height: expandedHeight
             )
         case .topRight:
+            expandedWidth = windowWidth + buffer
+            expandedHeight = windowHeight + buffer
             windowRect = NSRect(
-                x: screenFrame.maxX - windowWidth - padding,
-                y: screenFrame.maxY - windowHeight - padding,
-                width: windowWidth,
-                height: windowHeight
+                x: screenFrame.maxX - expandedWidth,
+                y: screenFrame.maxY - expandedHeight,
+                width: expandedWidth,
+                height: expandedHeight
             )
         case .bottomLeft:
+            expandedWidth = windowWidth + buffer
+            expandedHeight = windowHeight + buffer + 80
             windowRect = NSRect(
-                x: screenFrame.minX + padding,
-                y: screenFrame.minY + padding + 80, // 留出Dock安全距离
-                width: windowWidth,
-                height: windowHeight
+                x: screenFrame.minX,
+                y: screenFrame.minY,
+                width: expandedWidth,
+                height: expandedHeight
             )
         case .bottomRight:
+            expandedWidth = windowWidth + buffer
+            expandedHeight = windowHeight + buffer + 80
             windowRect = NSRect(
-                x: screenFrame.maxX - windowWidth - padding,
-                y: screenFrame.minY + padding + 80, // 留出Dock安全距离
-                width: windowWidth,
-                height: windowHeight
+                x: screenFrame.maxX - expandedWidth,
+                y: screenFrame.minY,
+                width: expandedWidth,
+                height: expandedHeight
             )
         case .topCenter:
+            expandedWidth = windowWidth
+            expandedHeight = windowHeight + buffer
             windowRect = NSRect(
-                x: screenFrame.midX - windowWidth / 2,
-                y: screenFrame.maxY - windowHeight - padding,
-                width: windowWidth,
-                height: windowHeight
+                x: screenFrame.midX - expandedWidth / 2,
+                y: screenFrame.maxY - expandedHeight,
+                width: expandedWidth,
+                height: expandedHeight
             )
         case .center:
+            expandedWidth = windowWidth + buffer
+            expandedHeight = windowHeight + buffer
             windowRect = NSRect(
-                x: screenFrame.midX - windowWidth / 2,
-                y: screenFrame.midY - windowHeight / 2,
-                width: windowWidth,
-                height: windowHeight
+                x: screenFrame.midX - expandedWidth / 2,
+                y: screenFrame.midY - expandedHeight / 2,
+                width: expandedWidth,
+                height: expandedHeight
             )
         case .bottomCenter:
+            expandedWidth = windowWidth
+            expandedHeight = windowHeight + buffer + 80
             windowRect = NSRect(
-                x: screenFrame.midX - windowWidth / 2,
-                y: screenFrame.minY + padding + 80, // 留出Dock安全距离
-                width: windowWidth,
-                height: windowHeight
+                x: screenFrame.midX - expandedWidth / 2,
+                y: screenFrame.minY,
+                width: expandedWidth,
+                height: expandedHeight
             )
         }
         
@@ -211,6 +233,7 @@ final class ReminderController: ObservableObject {
             overlayHeight: settings.overlayHeight,
             animationStyle: settings.animationStyle,
             position: settings.overlayPosition,
+            padding: padding,
             onDismiss: { [weak self, weak window] in
                 Task { @MainActor in
                     guard let self, let w = window else { return }

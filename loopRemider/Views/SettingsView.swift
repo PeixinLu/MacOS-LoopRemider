@@ -742,6 +742,7 @@ struct SettingsView: View {
                         overlayHeight: settings.overlayHeight,
                         animationStyle: settings.animationStyle,
                         position: settings.overlayPosition,
+                        padding: settings.overlayEdgePadding,
                         onDismiss: {}
                     )
                     .scaleEffect(0.7)
