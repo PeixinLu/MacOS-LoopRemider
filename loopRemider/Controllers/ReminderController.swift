@@ -14,7 +14,7 @@ import Combine
 final class ReminderController: ObservableObject {
     private var timer: Timer?
     private let center = UNUserNotificationCenter.current()
-    private var overlayWindow: NSWindow?
+    private var overlayWindow: NSPanel?  // 使用 NSPanel 替代 NSWindow 以支持全屏模式
 
     func ensurePermission() async {
         do {
@@ -114,11 +114,13 @@ final class ReminderController: ObservableObject {
     }
     
     private func showOverlayNotification(settings: AppSettings) {
+        // 先关闭已存在的遮罩窗口
         if let existingWindow = overlayWindow {
             existingWindow.close()
             overlayWindow = nil
         }
         
+        // 获取主屏幕或第一个可用屏幕
         guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
         let screenFrame = screen.visibleFrame
         
@@ -201,19 +203,26 @@ final class ReminderController: ObservableObject {
             )
         }
         
-        let window = NSWindow(
+        let window = NSPanel(
             contentRect: windowRect,
-            styleMask: [.borderless],
+            styleMask: [.borderless, .nonactivatingPanel],  // 使用 nonactivatingPanel 以不激活窗口
             backing: .buffered,
             defer: false
         )
         
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.level = .floating
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary]
+        // 使用 popUpMenu 级别确保在全屏应用上方显示
+        window.level = .popUpMenu
+        // 配置窗口行为：可加入所有空间、在全屏应用上方显示
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.ignoresMouseEvents = false
         window.isReleasedWhenClosed = false
+        // 确保窗口不会被激活打断用户操作
+        window.hidesOnDeactivate = false
+        // 关键：设置为浮动面板，允许在全屏应用上方显示
+        window.isFloatingPanel = true
+        window.becomesKeyOnlyIfNeeded = true
         
         let overlayView = OverlayNotificationView(
             emoji: settings.notifEmoji,
@@ -250,7 +259,16 @@ final class ReminderController: ObservableObject {
         )
         
         window.contentView = NSHostingView(rootView: overlayView)
-        window.makeKeyAndOrderFront(nil)
+        // 使用 orderFrontRegardless 确保窗口显示在最前方，即使在全屏模式下
+        window.orderFrontRegardless()
+        
+        // 调试信息：确认窗口配置
+        print("🔔 遮罩通知窗口已创建")
+        print("   - 窗口级别: \(window.level.rawValue)")
+        print("   - Collection Behavior: \(window.collectionBehavior)")
+        print("   - 是否浮动面板: \(window.isFloatingPanel)")
+        print("   - 窗口位置: \(windowRect)")
+        print("   - 窗口可见: \(window.isVisible)")
         
         self.overlayWindow = window
     }
