@@ -48,7 +48,8 @@ struct SettingsView: View {
                 Label(category.rawValue, systemImage: category.icon)
                     .tag(category)
             }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
+            .navigationSplitViewColumnWidth(min: 140, ideal: 160, max: 180)
+            .listStyle(.sidebar)
             .toolbar(removing: .sidebarToggle) // 隐藏折叠按钮
         } detail: {
             // 右侧内容区
@@ -64,7 +65,7 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 1000, height: 700)
+        .frame(width: 1200, height: 700)
         .onAppear {
             initializeInputValue()
         }
@@ -73,7 +74,10 @@ struct SettingsView: View {
     // MARK: - Basic Settings Tab
     
     private var basicSettingsContent: some View {
-        VStack(spacing: 20) {
+        HStack(alignment: .top, spacing: 24) {
+            // 左侧：基本设置内容
+            ScrollView {
+                VStack(spacing: 20) {
                 // Header
                 VStack(spacing: 8) {
                     Image(systemName: "bell.badge.fill")
@@ -338,16 +342,25 @@ struct SettingsView: View {
                 )
                 .opacity(settings.isRunning ? 0.6 : 1.0)
 
-                Spacer(minLength: 20)
+                    Spacer(minLength: 20)
+                }
+                .padding(.vertical, 20)
+            }
+            .frame(width: 500)
+            
+            // 右侧：占位空间（保持与样式设置页一致的布局）
+            Spacer()
+                .frame(width: 450)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
     
     // MARK: - Style Settings Tab
     
     private var styleSettingsContent: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 24) {
-                // 左侧：设置控制
+        HStack(alignment: .top, spacing: 24) {
+            // 左侧：设置控制
+            ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // Header
                     VStack(alignment: .leading, spacing: 8) {
@@ -597,7 +610,7 @@ struct SettingsView: View {
                             }
                             .padding(.bottom, 20)
                         }
-                        .frame(maxHeight: .infinity)
+                        .padding(.bottom, 20)
                         
                         if settings.isRunning {
                             HStack(spacing: 8) {
@@ -632,88 +645,88 @@ struct SettingsView: View {
                         .padding(40)
                     }
                 }
-                .frame(width: 500)
-                
-                // 右侧：实时预览
-                if settings.notificationMode == .overlay {
-                    VStack(alignment: .center, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Image(systemName: "eye.fill")
-                                    .foregroundStyle(.blue)
-                                Text("实时预览")
-                                    .font(.headline)
-                            }
-                            
-                            // 预览容器
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(.controlBackgroundColor))
-                                    .shadow(color: .black.opacity(0.1), radius: 3, y: 2)
-                                
-                                // 预览通知
-                                OverlayNotificationView(
-                                    emoji: settings.notifEmoji.isEmpty ? "⏰" : settings.notifEmoji,
-                                    title: settings.notifTitle.isEmpty ? "提醒" : settings.notifTitle,
-                                    message: settings.notifBody.isEmpty ? "起来活动一下～" : settings.notifBody,
-                                    backgroundColor: settings.getOverlayColor(),
-                                    backgroundOpacity: settings.overlayOpacity,
-                                    fadeStartDelay: 999,
-                                    fadeDuration: 1,
-                                    titleFontSize: settings.overlayTitleFontSize,
-                                    iconSize: settings.overlayIconSize,
-                                    cornerRadius: settings.overlayCornerRadius,
-                                    contentSpacing: settings.overlayContentSpacing,
-                                    useBlur: settings.overlayUseBlur,
-                                    blurIntensity: settings.overlayBlurIntensity,
-                                    overlayWidth: settings.overlayWidth,
-                                    overlayHeight: settings.overlayHeight,
-                                    onDismiss: {}
-                                )
-                                .scaleEffect(0.7)
-                            }
-                            .frame(width: 380, height: 400)
-                            
-                            Text("实际显示效果可能因系统设置而略有不同")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        // 测试按钮移到这里
-                        Button {
-                            sendingTest = true
-                            Task {
-                                await controller.sendTest(settings: settings)
-                                try? await Task.sleep(nanoseconds: 500_000_000)
-                                sendingTest = false
-                            }
-                        } label: {
-                            HStack(spacing: 6) {
-                                if sendingTest {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                } else {
-                                    Image(systemName: "paperplane.fill")
-                                        .font(.caption)
-                                }
-                                Text(sendingTest ? "发送中..." : "发送测试通知")
-                                    .font(.callout)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.regular)
-                        .disabled(sendingTest)
-                        .frame(width: 380)
-                        
-                        Spacer()
-                    }
-                    .frame(width: 400)
-                }
             }
-            .padding(.bottom, 24)
+            .frame(width: 500)
+                
+            // 右侧：实时预览（固定不滚动）
+            if settings.notificationMode == .overlay {
+                VStack(alignment: .center, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "eye.fill")
+                                .foregroundStyle(.blue)
+                            Text("实时预览")
+                                .font(.headline)
+                        }
+                        
+                        // 预览容器
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.controlBackgroundColor))
+                                .shadow(color: .black.opacity(0.1), radius: 3, y: 2)
+                            
+                            // 预览通知
+                            OverlayNotificationView(
+                                emoji: settings.notifEmoji.isEmpty ? "⏰" : settings.notifEmoji,
+                                title: settings.notifTitle.isEmpty ? "提醒" : settings.notifTitle,
+                                message: settings.notifBody.isEmpty ? "起来活动一下～" : settings.notifBody,
+                                backgroundColor: settings.getOverlayColor(),
+                                backgroundOpacity: settings.overlayOpacity,
+                                fadeStartDelay: 999,
+                                fadeDuration: 1,
+                                titleFontSize: settings.overlayTitleFontSize,
+                                iconSize: settings.overlayIconSize,
+                                cornerRadius: settings.overlayCornerRadius,
+                                contentSpacing: settings.overlayContentSpacing,
+                                useBlur: settings.overlayUseBlur,
+                                blurIntensity: settings.overlayBlurIntensity,
+                                overlayWidth: settings.overlayWidth,
+                                overlayHeight: settings.overlayHeight,
+                                onDismiss: {}
+                            )
+                            .scaleEffect(0.7)
+                        }
+                        .frame(width: 420, height: 420)
+                        
+                        Text("实际显示效果可能因系统设置而略有不同")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    // 测试按钮
+                    Button {
+                        sendingTest = true
+                        Task {
+                            await controller.sendTest(settings: settings)
+                            try? await Task.sleep(nanoseconds: 500_000_000)
+                            sendingTest = false
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            if sendingTest {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: "paperplane.fill")
+                                    .font(.caption)
+                            }
+                            Text(sendingTest ? "发送中..." : "发送测试通知")
+                                .font(.callout)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
+                    .disabled(sendingTest)
+                    .frame(width: 420)
+                    
+                    Spacer()
+                }
+                .frame(minWidth: 450, idealWidth: 450, maxWidth: 450)
+            }
         }
+        .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
     
@@ -735,7 +748,7 @@ struct SettingsView: View {
                 Image(systemName: icon)
                     .foregroundStyle(iconColor)
             }
-            .frame(width: 120, alignment: .leading)
+            .frame(width: 100, alignment: .leading)
             
             Spacer()
             

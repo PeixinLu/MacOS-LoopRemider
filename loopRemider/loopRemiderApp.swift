@@ -42,6 +42,12 @@ struct loopRemiderApp: App {
             SettingsLink {
                 Text("配置…")
             }
+            .onAppear {
+                // 延迟激活窗口
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    activateSettingsWindow()
+                }
+            }
 
             Divider()
 
@@ -61,10 +67,29 @@ struct loopRemiderApp: App {
                 .environmentObject(controller)
                 .onAppear {
                     // 确保设置窗口在前台
-                    NSApp.activate(ignoringOtherApps: true)
+                    activateSettingsWindow()
                     // 传递 controller 给 AppDelegate 用于清理
                     appDelegate.controller = controller
                 }
+        }
+    }
+    
+    // 激活设置窗口
+    private func activateSettingsWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        
+        // 查找设置窗口并将其置于前台
+        for window in NSApp.windows {
+            if window.title.contains("配置") || window.title.contains("Settings") || window.level == .floating {
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+                break
+            }
+        }
+        
+        // 如果没有找到特定窗口，尝试将所有窗口置于前台
+        if let mainWindow = NSApp.windows.first(where: { $0.isVisible && !$0.title.isEmpty }) {
+            mainWindow.makeKeyAndOrderFront(nil)
         }
     }
 }

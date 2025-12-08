@@ -26,6 +26,7 @@ struct OverlayNotificationView: View {
     let onDismiss: () -> Void
     
     @State private var opacity: Double = 1.0
+    @State private var scale: Double = 1.0
     
     var body: some View {
         VStack(spacing: contentSpacing) {
@@ -52,14 +53,13 @@ struct OverlayNotificationView: View {
         .background(
             ZStack {
                 if useBlur {
-                    // 模糊背景层
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.ultraThinMaterial)
-                        .opacity(blurIntensity)
+                    // 整体模糊背景效果（类似iOS18之前的效果）
+                    VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     
                     // 颜色叠加层
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(backgroundColor.opacity(backgroundOpacity * 0.6))
+                        .fill(backgroundColor.opacity(backgroundOpacity * blurIntensity * 0.7))
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius)
                         .fill(backgroundColor.opacity(backgroundOpacity))
@@ -69,6 +69,7 @@ struct OverlayNotificationView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .opacity(opacity)
+        .scaleEffect(scale)
         .onAppear {
             startFadeTimer()
         }
@@ -79,13 +80,35 @@ struct OverlayNotificationView: View {
     
     private func startFadeTimer() {
         DispatchQueue.main.asyncAfter(deadline: .now() + fadeStartDelay) {
+            // 使用更平滑的淡出动画，结合透明度和缩放
             withAnimation(.easeInOut(duration: fadeDuration)) {
-                opacity = 0.1
+                opacity = 0.0
+                scale = 0.95
             }
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration + 0.1) {
                 onDismiss()
             }
         }
+    }
+}
+
+// MARK: - Visual Effect Blur
+// 自定义视觉效果模糊视图，实现整体模糊效果
+struct VisualEffectBlur: NSViewRepresentable {
+    var material: NSVisualEffectView.Material
+    var blendingMode: NSVisualEffectView.BlendingMode
+    
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
     }
 }
