@@ -4,7 +4,6 @@ import AppKit
 // App Delegate to handle lifecycle events
 class AppDelegate: NSObject, NSApplicationDelegate {
     var controller: ReminderController?
-    var openSettingsAction: (() -> Void)?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 默认使用 accessory 模式，不在 Dock 显示
@@ -19,7 +18,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         // 当用户点击 Dock 图标或 Command+Tab 切换时，显示设置窗口
         if !flag {
-            openSettingsAction?()
+            // 查找并激活窗口
+            if let window = NSApp.windows.first(where: { $0.title == "配置" || $0.identifier?.rawValue == "settings" }) {
+                NSApp.setActivationPolicy(.regular)
+                NSApp.activate(ignoringOtherApps: true)
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+            }
         }
         return true
     }
@@ -32,8 +37,22 @@ struct loopRemiderApp: App {
     @StateObject private var controller = ReminderController()
     @Environment(\.openWindow) private var openWindow
     @State private var settingsWindowOpen = false
+    @State private var hasLaunched = false
 
     var body: some Scene {
+        // 首次启动时自动打开窗口
+        let _ = Task {
+            if !hasLaunched {
+                hasLaunched = true
+                // 等待 scene 初始化完成
+                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+                await MainActor.run {
+                    openSettingsWindow()
+                }
+            }
+        }
+        
+        return Group {
         // 菜单栏
         MenuBarExtra {
             Button(settings.isRunning ? "暂停" : "启动") {
@@ -69,9 +88,8 @@ struct loopRemiderApp: App {
                 .environmentObject(controller)
                 .onAppear {
                     appDelegate.controller = controller
-                    appDelegate.openSettingsAction = openSettingsWindow
                     settingsWindowOpen = true
-                    // 切换到 regular 模式，显示 Dock 图标
+                    // 窗口显示时切换到 regular 模式
                     NSApp.setActivationPolicy(.regular)
                     NSApp.activate(ignoringOtherApps: true)
                 }
@@ -89,6 +107,7 @@ struct loopRemiderApp: App {
             CommandGroup(replacing: .newItem) { }
         }
     }
+}
     
     // 打开设置窗口
     func openSettingsWindow() {
@@ -100,10 +119,16 @@ struct loopRemiderApp: App {
             existingWindow.makeKeyAndOrderFront(nil)
             existingWindow.orderFrontRegardless()
         } else {
+            // 切换到 regular 模式
+            NSApp.setActivationPolicy(.regular)
             // 创建新窗口
             openWindow(id: "settings")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 NSApp.activate(ignoringOtherApps: true)
+                // 确保窗口置前
+                if let window = NSApp.windows.first(where: { $0.title == "配置" || $0.identifier?.rawValue == "settings" }) {
+                    window.orderFrontRegardless()
+                }
             }
         }
     }
