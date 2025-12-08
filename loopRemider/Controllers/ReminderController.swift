@@ -121,8 +121,35 @@ final class ReminderController: ObservableObject {
         }
         
         // 获取主屏幕或第一个可用屏幕
-        guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
+        let screen: NSScreen?
+        switch settings.screenSelection {
+        case .active:
+            // 活跃屏幕：包含当前获得焦点的窗口所在的屏幕
+            screen = NSScreen.main ?? NSScreen.screens.first
+        case .mouse:
+            // 鼠标所在屏幕：根据鼠标光标位置确定屏幕
+            let mouseLocation = NSEvent.mouseLocation
+            screen = NSScreen.screens.first { screen in
+                screen.frame.contains(mouseLocation)
+            } ?? NSScreen.main ?? NSScreen.screens.first
+        }
+        
+        guard let screen else { return }
         let screenFrame = screen.visibleFrame
+        
+        // 调试信息：显示屏幕选择
+        print("🖥️  屏幕选择信息：")
+        print("   - 选择模式: \(settings.screenSelection.rawValue)")
+        print("   - 总屏幕数: \(NSScreen.screens.count)")
+        if settings.screenSelection == .mouse {
+            let mouseLocation = NSEvent.mouseLocation
+            print("   - 鼠标位置: (\(mouseLocation.x), \(mouseLocation.y))")
+        }
+        if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+            print("   - 使用屏幕编号: \(screenNumber)")
+        }
+        print("   - 屏幕Frame: \(screen.frame)")
+        print("   - 可见Frame: \(screenFrame)")
         
         let windowWidth: CGFloat = settings.overlayWidth
         let windowHeight: CGFloat = settings.overlayHeight
@@ -265,10 +292,10 @@ final class ReminderController: ObservableObject {
         // 调试信息：确认窗口配置
         print("🔔 遮罩通知窗口已创建")
         print("   - 窗口级别: \(window.level.rawValue)")
-        print("   - Collection Behavior: \(window.collectionBehavior)")
-        print("   - 是否浮动面板: \(window.isFloatingPanel)")
         print("   - 窗口位置: \(windowRect)")
         print("   - 窗口可见: \(window.isVisible)")
+        print("   - 是否浮动面板: \(window.isFloatingPanel)")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         
         self.overlayWindow = window
     }

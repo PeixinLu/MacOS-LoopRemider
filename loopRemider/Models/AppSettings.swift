@@ -41,6 +41,7 @@ final class AppSettings: ObservableObject {
         static let overlayCustomColorG = "overlayCustomColorG"
         static let overlayCustomColorB = "overlayCustomColorB"
         static let overlayBodyFontSize = "overlayBodyFontSize"
+        static let screenSelection = "screenSelection"
     }
 
     private let defaults = UserDefaults.standard
@@ -79,6 +80,7 @@ final class AppSettings: ObservableObject {
     @Published var overlayHeight: Double
     @Published var overlayCustomColor: Color
     @Published var overlayBodyFontSize: Double
+    @Published var screenSelection: ScreenSelection
     
     enum NotificationMode: String, CaseIterable {
         case system = "系统通知"
@@ -110,6 +112,20 @@ final class AppSettings: ObservableObject {
         case fade = "淡化"
         case slide = "平移"
         case scale = "缩放"
+    }
+    
+    enum ScreenSelection: String, CaseIterable {
+        case active = "活跃屏幕"
+        case mouse = "鼠标所在屏幕"
+        
+        var description: String {
+            switch self {
+            case .active:
+                return "通知显示在当前获得焦点的屏幕"
+            case .mouse:
+                return "通知显示在鼠标光标所在的屏幕"
+            }
+        }
     }
 
     init() {
@@ -156,6 +172,9 @@ final class AppSettings: ObservableObject {
         let g = defaults.object(forKey: Keys.overlayCustomColorG) as? Double ?? 0.5
         let b = defaults.object(forKey: Keys.overlayCustomColorB) as? Double ?? 0.5
         self.overlayCustomColor = Color(red: r, green: g, blue: b)
+        
+        let screenSelectionRawValue = defaults.string(forKey: Keys.screenSelection) ?? ScreenSelection.active.rawValue
+        self.screenSelection = ScreenSelection(rawValue: screenSelectionRawValue) ?? .active
 
         // Persist changes - 基本设置
         $isRunning.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.isRunning) }.store(in: &cancellables)
@@ -194,6 +213,7 @@ final class AppSettings: ObservableObject {
             self.defaults.set(components.green, forKey: Keys.overlayCustomColorG)
             self.defaults.set(components.blue, forKey: Keys.overlayCustomColorB)
         }.store(in: &cancellables)
+        $screenSelection.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.screenSelection) }.store(in: &cancellables)
 
         // Guardrail: 10秒到2小时
         if intervalSeconds < 10 { intervalSeconds = 10 }

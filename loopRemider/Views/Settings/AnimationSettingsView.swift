@@ -32,6 +32,11 @@ struct AnimationSettingsView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         Group {
+                            // 屏幕选择
+                            screenSelectionSection
+                            
+                            Divider().padding(.vertical, 4)
+                            
                             // 位置
                             positionSection
                             
@@ -99,6 +104,33 @@ struct AnimationSettingsView: View {
     }
     
     // MARK: - Setting Sections
+    
+    private var screenSelectionSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SettingRow(icon: "display.2", iconColor: .indigo, title: "显示屏幕") {
+                Picker("", selection: $settings.screenSelection) {
+                    ForEach(AppSettings.ScreenSelection.allCases, id: \.self) { selection in
+                        Text(selection.rawValue).tag(selection)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(settings.isRunning)
+                .frame(width: 220)
+            }
+            
+            HStack {
+                Image(systemName: "info.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.indigo.opacity(0.6))
+                Text(settings.screenSelection.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.leading, 24)
+            .padding(.top, -8)
+        }
+    }
     
     private var positionSection: some View {
         SettingRow(icon: "location.fill", iconColor: .blue, title: "位置") {
