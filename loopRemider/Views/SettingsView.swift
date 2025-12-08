@@ -26,6 +26,7 @@ struct SettingsView: View {
         case basic = "基本设置"
         case style = "通知样式"
         case animation = "动画和定位"
+        case about = "关于"
         
         var id: String { rawValue }
         
@@ -34,6 +35,7 @@ struct SettingsView: View {
             case .basic: return "bell.badge.fill"
             case .style: return "paintbrush.pointed.fill"
             case .animation: return "wand.and.stars"
+            case .about: return "info.circle.fill"
             }
         }
     }
@@ -64,21 +66,26 @@ struct SettingsView: View {
                             StyleSettingsView()
                         case .animation:
                             AnimationSettingsView()
+                        case .about:
+                            AboutView()
                         }
                     }
                     .padding(24)
                 }
-                .frame(width: 500)
+                .frame(width: selectedCategory == .about ? nil : 500)
+                .frame(maxWidth: selectedCategory == .about ? .infinity : nil)
                 
-                // 右侧：预览区域（固定不滚动）
-                PreviewSectionView(
-                    sendingTest: $sendingTest,
-                    countdownText: $countdownText,
-                    progressValue: $progressValue
-                )
-                .frame(width: 450)
-                .padding(.top, 24)
-                .padding(.trailing, 24)
+                // 右侧：预览区域（仅在非关于页显示）
+                if selectedCategory != .about {
+                    PreviewSectionView(
+                        sendingTest: $sendingTest,
+                        countdownText: $countdownText,
+                        progressValue: $progressValue
+                    )
+                    .frame(width: 450)
+                    .padding(.top, 24)
+                    .padding(.trailing, 24)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
