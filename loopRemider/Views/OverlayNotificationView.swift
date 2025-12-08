@@ -23,10 +23,13 @@ struct OverlayNotificationView: View {
     let blurIntensity: Double
     let overlayWidth: Double
     let overlayHeight: Double
+    let animationStyle: AppSettings.AnimationStyle
+    let position: AppSettings.OverlayPosition
     let onDismiss: () -> Void
     
     @State private var opacity: Double = 1.0
     @State private var scale: Double = 1.0
+    @State private var offset: CGSize = .zero
     
     var body: some View {
         VStack(spacing: contentSpacing) {
@@ -70,25 +73,98 @@ struct OverlayNotificationView: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .opacity(opacity)
         .scaleEffect(scale)
+        .offset(offset)
         .onAppear {
-            startFadeTimer()
+            applyEntryAnimation()
+            startExitTimer()
         }
         .onTapGesture {
             onDismiss()
         }
     }
     
-    private func startFadeTimer() {
+    private func applyEntryAnimation() {
+        switch animationStyle {
+        case .fade:
+            // 淡化：从透明渐变为不透明
+            opacity = 0
+            withAnimation(.easeOut(duration: 0.3)) {
+                opacity = 1.0
+            }
+        case .slide:
+            // 平移：根据位置从屏幕边缘飞入
+            let slideDistance: CGFloat = 100
+            switch position {
+            case .topLeft, .bottomLeft:
+                offset = CGSize(width: -slideDistance, height: 0)
+            case .topRight, .bottomRight:
+                offset = CGSize(width: slideDistance, height: 0)
+            case .topCenter:
+                offset = CGSize(width: 0, height: -slideDistance)
+            case .bottomCenter:
+                offset = CGSize(width: 0, height: slideDistance)
+            case .center:
+                // 屏幕正中：从上方飞入
+                offset = CGSize(width: 0, height: -slideDistance)
+            }
+            
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                offset = .zero
+            }
+        case .scale:
+            // 缩放：从小到大
+            scale = 0.5
+            opacity = 0
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                scale = 1.0
+                opacity = 1.0
+            }
+        }
+    }
+    
+    private func startExitTimer() {
         DispatchQueue.main.asyncAfter(deadline: .now() + fadeStartDelay) {
-            // 使用更平滑的淡出动画，结合透明度和缩放
+            applyExitAnimation()
+        }
+    }
+    
+    private func applyExitAnimation() {
+        switch animationStyle {
+        case .fade:
+            // 淡化退出：透明度渐变 + 轻微缩小
             withAnimation(.easeInOut(duration: fadeDuration)) {
                 opacity = 0.0
                 scale = 0.95
             }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration + 0.1) {
-                onDismiss()
+        case .slide:
+            // 平移退出：根据位置向屏幕边缘飞出
+            let slideDistance: CGFloat = 100
+            withAnimation(.easeIn(duration: fadeDuration)) {
+                opacity = 0.0
+                switch position {
+                case .topLeft, .bottomLeft:
+                    offset = CGSize(width: -slideDistance, height: 0)
+                case .topRight, .bottomRight:
+                    offset = CGSize(width: slideDistance, height: 0)
+                case .topCenter:
+                    offset = CGSize(width: 0, height: -slideDistance)
+                case .bottomCenter:
+                    offset = CGSize(width: 0, height: slideDistance)
+                case .center:
+                    // 屏幕正中：向上飞出
+                    offset = CGSize(width: 0, height: -slideDistance)
+                }
             }
+        case .scale:
+            // 缩放退出：从大到小
+            withAnimation(.easeIn(duration: fadeDuration)) {
+                scale = 0.5
+                opacity = 0.0
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration + 0.1) {
+            onDismiss()
         }
     }
 }

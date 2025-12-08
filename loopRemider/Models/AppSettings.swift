@@ -24,6 +24,7 @@ final class AppSettings: ObservableObject {
         static let overlayFadeDelay = "overlayFadeDelay"
         static let overlayFadeStartDelay = "overlayFadeStartDelay"
         static let overlayFadeDuration = "overlayFadeDuration"
+        static let animationStyle = "animationStyle"
         // 新增样式配置
         static let overlayTitleFontSize = "overlayTitleFontSize"
         static let overlayIconSize = "overlayIconSize"
@@ -57,8 +58,9 @@ final class AppSettings: ObservableObject {
     @Published var overlayPosition: OverlayPosition
     @Published var overlayColor: OverlayColor
     @Published var overlayOpacity: Double
-    @Published var overlayFadeStartDelay: Double
-    @Published var overlayFadeDuration: Double
+    @Published var overlayFadeStartDelay: Double // 持续时间
+    @Published var overlayFadeDuration: Double // 动画时长
+    @Published var animationStyle: AnimationStyle
     
     // 新增样式配置
     @Published var overlayTitleFontSize: Double
@@ -78,10 +80,13 @@ final class AppSettings: ObservableObject {
     }
     
     enum OverlayPosition: String, CaseIterable {
-        case topRight = "右上角"
         case topLeft = "左上角"
+        case topRight = "右上角"
+        case bottomLeft = "左下角"
+        case bottomRight = "右下角"
         case topCenter = "顶部居中"
-        case center = "屏幕中央"
+        case center = "屏幕正中"
+        case bottomCenter = "底部居中"
     }
     
     enum OverlayColor: String, CaseIterable {
@@ -93,6 +98,12 @@ final class AppSettings: ObservableObject {
         case red = "红色"
         case teal = "青色"
         case custom = "自定义"
+    }
+    
+    enum AnimationStyle: String, CaseIterable {
+        case fade = "淡化"
+        case slide = "平移"
+        case scale = "缩放"
     }
 
     init() {
@@ -117,6 +128,9 @@ final class AppSettings: ObservableObject {
         self.overlayOpacity = defaults.object(forKey: Keys.overlayOpacity) as? Double ?? 0.85
         self.overlayFadeStartDelay = defaults.object(forKey: Keys.overlayFadeStartDelay) as? Double ?? 2.0
         self.overlayFadeDuration = defaults.object(forKey: Keys.overlayFadeDuration) as? Double ?? -1
+        
+        let animationRawValue = defaults.string(forKey: Keys.animationStyle) ?? AnimationStyle.fade.rawValue
+        self.animationStyle = AnimationStyle(rawValue: animationRawValue) ?? .fade
         
         // Load - 新增样式配置
         self.overlayTitleFontSize = defaults.object(forKey: Keys.overlayTitleFontSize) as? Double ?? 17.0
@@ -149,6 +163,7 @@ final class AppSettings: ObservableObject {
         $overlayOpacity.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayOpacity) }.store(in: &cancellables)
         $overlayFadeStartDelay.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayFadeStartDelay) }.store(in: &cancellables)
         $overlayFadeDuration.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayFadeDuration) }.store(in: &cancellables)
+        $animationStyle.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.animationStyle) }.store(in: &cancellables)
         
         // Persist changes - 新增样式配置
         $overlayTitleFontSize.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.overlayTitleFontSize) }.store(in: &cancellables)

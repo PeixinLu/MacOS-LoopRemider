@@ -18,6 +18,7 @@ struct SettingsView: View {
     enum SettingsCategory: String, CaseIterable, Identifiable {
         case basic = "基本设置"
         case style = "通知样式"
+        case animation = "动画效果"
         
         var id: String { rawValue }
         
@@ -25,6 +26,7 @@ struct SettingsView: View {
             switch self {
             case .basic: return "bell.badge.fill"
             case .style: return "paintbrush.pointed.fill"
+            case .animation: return "wand.and.stars"
             }
         }
     }
@@ -59,8 +61,11 @@ struct SettingsView: View {
                     if selectedCategory == .basic {
                         basicSettingsContent
                             .padding(24)
-                    } else {
+                    } else if selectedCategory == .style {
                         styleSettingsContent
+                            .padding(24)
+                    } else {
+                        animationSettingsContent
                             .padding(24)
                     }
                 }
@@ -333,18 +338,6 @@ struct SettingsView: View {
                         ScrollView {
                             VStack(spacing: 16) {
                                 Group {
-                                    // 位置
-                                    settingRow(icon: "location.fill", iconColor: .blue, title: "位置") {
-                                        Picker("", selection: $settings.overlayPosition) {
-                                            ForEach(AppSettings.OverlayPosition.allCases, id: \.self) { position in
-                                                Text(position.rawValue).tag(position)
-                                            }
-                                        }
-                                        .pickerStyle(.menu)
-                                        .disabled(settings.isRunning)
-                                        .frame(width: 120)
-                                    }
-                                    
                                     // 颜色
                                     VStack(alignment: .leading, spacing: 8) {
                                         settingRow(icon: "paintpalette.fill", iconColor: .purple, title: "颜色") {
@@ -505,57 +498,6 @@ struct SettingsView: View {
                                             }
                                         }
                                     }
-                                    
-                                    Divider().padding(.vertical, 4)
-                                    
-                                    // 淡化延迟
-                                    settingRow(icon: "timer", iconColor: .orange, title: "淡化延迟") {
-                                        HStack(spacing: 8) {
-                                            Slider(value: $settings.overlayFadeStartDelay, in: 0...10, step: 0.5)
-                                                .disabled(settings.isRunning)
-                                                .frame(width: 120)
-                                            Text(String(format: "%.1f秒", settings.overlayFadeStartDelay))
-                                                .font(.system(.body, design: .rounded))
-                                                .fontWeight(.medium)
-                                                .foregroundStyle(.orange)
-                                                .frame(width: 50)
-                                        }
-                                    }
-                                    
-                                    // 淡化时长
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        settingRow(icon: "clock.badge.checkmark.fill", iconColor: .green, title: "淡化时长") {
-                                            if settings.overlayFadeDuration < 0 {
-                                                HStack {
-                                                    Text("自动")
-                                                        .foregroundStyle(.secondary)
-                                                    Button("手动") {
-                                                        settings.overlayFadeDuration = 10
-                                                    }
-                                                    .buttonStyle(.bordered)
-                                                    .controlSize(.small)
-                                                    .disabled(settings.isRunning)
-                                                }
-                                            } else {
-                                                HStack(spacing: 8) {
-                                                    Slider(value: $settings.overlayFadeDuration, in: 1...60, step: 1)
-                                                        .disabled(settings.isRunning)
-                                                        .frame(width: 80)
-                                                    Text("\(Int(settings.overlayFadeDuration))秒")
-                                                        .font(.system(.body, design: .rounded))
-                                                        .fontWeight(.medium)
-                                                        .foregroundStyle(.green)
-                                                        .frame(width: 40)
-                                                    Button("自动") {
-                                                        settings.overlayFadeDuration = -1
-                                                    }
-                                                    .buttonStyle(.bordered)
-                                                    .controlSize(.small)
-                                                    .disabled(settings.isRunning)
-                                                }
-                                            }
-                                        }
-                                    }
                                 }
                             }
                             .padding(.bottom, 20)
@@ -597,6 +539,172 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Animation Settings Tab
+    
+    private var animationSettingsContent: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.purple.gradient)
+                    Text("动画效果")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                }
+                Text("自定义通知的动画效果")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 12)
+            
+            // 动画设置仅在overlay模式下可用
+            if settings.notificationMode == .overlay {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        Group {
+                            // 位置
+                            settingRow(icon: "location.fill", iconColor: .blue, title: "位置") {
+                                Picker("", selection: $settings.overlayPosition) {
+                                    ForEach(AppSettings.OverlayPosition.allCases, id: \.self) { position in
+                                        Text(position.rawValue).tag(position)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .disabled(settings.isRunning)
+                                .frame(width: 120)
+                            }
+                            
+                            Divider().padding(.vertical, 4)
+                            
+                            // 动画类型
+                            settingRow(icon: "sparkles", iconColor: .pink, title: "动画类型") {
+                                Picker("", selection: $settings.animationStyle) {
+                                    ForEach(AppSettings.AnimationStyle.allCases, id: \.self) { style in
+                                        Text(style.rawValue).tag(style)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .disabled(settings.isRunning)
+                                .frame(width: 200)
+                            }
+                            
+                            Divider().padding(.vertical, 4)
+                            
+                            // 持续时间（原淡化延迟）
+                            settingRow(icon: "timer", iconColor: .orange, title: "持续时间") {
+                                HStack(spacing: 8) {
+                                    Slider(value: $settings.overlayFadeStartDelay, in: 0...10, step: 0.5)
+                                        .disabled(settings.isRunning)
+                                        .frame(width: 120)
+                                    Text(String(format: "%.1f秒", settings.overlayFadeStartDelay))
+                                        .font(.system(.body, design: .rounded))
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(.orange)
+                                        .frame(width: 50)
+                                }
+                            }
+                            
+                            HStack {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange.opacity(0.6))
+                                Text("通知显示后停留的时间")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.leading, 24)
+                            .padding(.top, -8)
+                            
+                            // 动画时长（原淡化时长）
+                            VStack(alignment: .leading, spacing: 8) {
+                                settingRow(icon: "clock.badge.checkmark.fill", iconColor: .green, title: "动画时长") {
+                                    if settings.overlayFadeDuration < 0 {
+                                        HStack {
+                                            Text("自动")
+                                                .foregroundStyle(.secondary)
+                                            Button("手动") {
+                                                settings.overlayFadeDuration = 10
+                                            }
+                                            .buttonStyle(.bordered)
+                                            .controlSize(.small)
+                                            .disabled(settings.isRunning)
+                                        }
+                                    } else {
+                                        HStack(spacing: 8) {
+                                            Slider(value: $settings.overlayFadeDuration, in: 1...60, step: 1)
+                                                .disabled(settings.isRunning)
+                                                .frame(width: 80)
+                                            Text("\(Int(settings.overlayFadeDuration))秒")
+                                                .font(.system(.body, design: .rounded))
+                                                .fontWeight(.medium)
+                                                .foregroundStyle(.green)
+                                                .frame(width: 40)
+                                            Button("自动") {
+                                                settings.overlayFadeDuration = -1
+                                            }
+                                            .buttonStyle(.bordered)
+                                            .controlSize(.small)
+                                            .disabled(settings.isRunning)
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            HStack {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.green.opacity(0.6))
+                                Text("应用动画的时长")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.leading, 24)
+                            .padding(.top, -8)
+                        }
+                    }
+                    .padding(.bottom, 20)
+                }
+                .padding(.bottom, 20)
+                
+                if settings.isRunning {
+                    HStack(spacing: 8) {
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.orange)
+                        Text("请先暂停才能修改动画设置")
+                            .font(.callout)
+                            .foregroundStyle(.orange)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange.opacity(0.1))
+                    )
+                }
+            } else {
+                // 系统通知模式提示
+                VStack(spacing: 12) {
+                    Image(systemName: "bell.badge.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.secondary)
+                    Text("仅在屏幕遮罩模式下可用")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Text("请在基本设置中将通知方式改为屏幕遮罩")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(40)
+            }
+        }
+    }
+    
     // MARK: - Preview Section
     
     private var previewSection: some View {
@@ -632,6 +740,8 @@ struct SettingsView: View {
                         blurIntensity: settings.overlayBlurIntensity,
                         overlayWidth: settings.overlayWidth,
                         overlayHeight: settings.overlayHeight,
+                        animationStyle: settings.animationStyle,
+                        position: settings.overlayPosition,
                         onDismiss: {}
                     )
                     .scaleEffect(0.7)

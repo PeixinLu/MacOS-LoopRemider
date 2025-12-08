@@ -128,6 +128,13 @@ final class ReminderController: ObservableObject {
         
         let windowRect: NSRect
         switch settings.overlayPosition {
+        case .topLeft:
+            windowRect = NSRect(
+                x: screenFrame.minX + padding,
+                y: screenFrame.maxY - windowHeight - padding,
+                width: windowWidth,
+                height: windowHeight
+            )
         case .topRight:
             windowRect = NSRect(
                 x: screenFrame.maxX - windowWidth - padding,
@@ -135,10 +142,17 @@ final class ReminderController: ObservableObject {
                 width: windowWidth,
                 height: windowHeight
             )
-        case .topLeft:
+        case .bottomLeft:
             windowRect = NSRect(
                 x: screenFrame.minX + padding,
-                y: screenFrame.maxY - windowHeight - padding,
+                y: screenFrame.minY + padding + 80, // 留出Dock安全距离
+                width: windowWidth,
+                height: windowHeight
+            )
+        case .bottomRight:
+            windowRect = NSRect(
+                x: screenFrame.maxX - windowWidth - padding,
+                y: screenFrame.minY + padding + 80, // 留出Dock安全距离
                 width: windowWidth,
                 height: windowHeight
             )
@@ -153,6 +167,13 @@ final class ReminderController: ObservableObject {
             windowRect = NSRect(
                 x: screenFrame.midX - windowWidth / 2,
                 y: screenFrame.midY - windowHeight / 2,
+                width: windowWidth,
+                height: windowHeight
+            )
+        case .bottomCenter:
+            windowRect = NSRect(
+                x: screenFrame.midX - windowWidth / 2,
+                y: screenFrame.minY + padding + 80, // 留出Dock安全距离
                 width: windowWidth,
                 height: windowHeight
             )
@@ -188,6 +209,8 @@ final class ReminderController: ObservableObject {
             blurIntensity: settings.overlayBlurIntensity,
             overlayWidth: settings.overlayWidth,
             overlayHeight: settings.overlayHeight,
+            animationStyle: settings.animationStyle,
+            position: settings.overlayPosition,
             onDismiss: { [weak self, weak window] in
                 Task { @MainActor in
                     guard let self, let w = window else { return }
