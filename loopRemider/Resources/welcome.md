@@ -11,6 +11,7 @@
 遇到 bug、想吐槽、想许愿新功能，或者只是想说一句“在吗”，都欢迎来信：
 luhuijiao667@gmail.com
 
+如果可以，麻烦给 Loop Reminder 的 [GitHub 仓库](https://github.com/PeixinLu/MacOS-LoopRemider) 点个 star 😊
 
 我们还在持续迭代中，边跑边修、边修边进化🧬
 感谢你的支持！一起把它养成更好用的小怪兽👾

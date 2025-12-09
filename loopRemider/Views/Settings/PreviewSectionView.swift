@@ -68,30 +68,43 @@ struct PreviewSectionView: View {
                             let heightScale = notifHeight > screenHeight ? screenHeight / notifHeight : 1.0
                             let scale = min(widthScale, heightScale, 1.0)
                             
-                            OverlayNotificationView(
-                                emoji: settings.notifEmoji,
-                                title: settings.notifTitle,
-                                message: settings.notifBody,
-                                backgroundColor: settings.getOverlayColor(),
-                                backgroundOpacity: settings.overlayOpacity,
-                                stayDuration: 999,
-                                enableFadeOut: false,
-                                fadeOutDelay: 0,
-                                fadeOutDuration: 1,
-                                titleFontSize: settings.overlayTitleFontSize * scale,
-                                bodyFontSize: settings.overlayBodyFontSize * scale,
-                                iconSize: settings.overlayIconSize * scale,
-                                cornerRadius: settings.overlayCornerRadius * scale,
-                                contentSpacing: settings.overlayContentSpacing * scale,
-                                useBlur: settings.overlayUseBlur,
-                                blurIntensity: settings.overlayBlurIntensity,
-                                overlayWidth: settings.overlayWidth * scale,
-                                overlayHeight: settings.overlayHeight * scale,
-                                animationStyle: .fade, // 固定使用淡入效果，避免动画影响预览
-                                position: .center, // 固定在中央位置
-                                padding: 0, // 预览中不需要边距
-                                onDismiss: {}
-                            )
+                            // NSPanel外边框容器
+                            ZStack {
+                                // NSPanel的背景和边框效果
+                                RoundedRectangle(cornerRadius: settings.overlayCornerRadius * scale)
+                                    .strokeBorder(Color.black.opacity(0.15), lineWidth: 0.5 * scale)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: settings.overlayCornerRadius * scale)
+                                            .fill(Color.clear)
+                                    )
+                                    .frame(width: (settings.overlayWidth + 1) * scale, height: (settings.overlayHeight + 1) * scale)
+                                
+                                // 实际通知内容
+                                OverlayNotificationView(
+                                    emoji: settings.notifEmoji,
+                                    title: settings.notifTitle,
+                                    message: settings.notifBody,
+                                    backgroundColor: settings.getOverlayColor(),
+                                    backgroundOpacity: settings.overlayOpacity,
+                                    stayDuration: 999,
+                                    enableFadeOut: false,
+                                    fadeOutDelay: 0,
+                                    fadeOutDuration: 1,
+                                    titleFontSize: settings.overlayTitleFontSize * scale,
+                                    bodyFontSize: settings.overlayBodyFontSize * scale,
+                                    iconSize: settings.overlayIconSize * scale,
+                                    cornerRadius: settings.overlayCornerRadius * scale,
+                                    contentSpacing: settings.overlayContentSpacing * scale,
+                                    useBlur: settings.overlayUseBlur,
+                                    blurIntensity: settings.overlayBlurIntensity,
+                                    overlayWidth: settings.overlayWidth * scale,
+                                    overlayHeight: settings.overlayHeight * scale,
+                                    animationStyle: .fade,
+                                    position: .center,
+                                    padding: 0,
+                                    onDismiss: {}
+                                )
+                            }
                         }
                         .padding(8) // 确保通知在边框内
                     )
@@ -130,6 +143,11 @@ struct PreviewSectionView: View {
                 Toggle("", isOn: Binding(
                     get: { settings.isRunning },
                     set: { newValue in
+                        // 验证内容
+                        if newValue && !settings.isContentValid() {
+                            return
+                        }
+                        
                         settings.isRunning = newValue
                         if newValue {
                             controller.start(settings: settings)
@@ -149,6 +167,7 @@ struct PreviewSectionView: View {
                 ))
                 .toggleStyle(.switch)
                 .labelsHidden()
+                .disabled(!settings.isContentValid())
             }
             .padding(12)
             .background(
@@ -178,6 +197,19 @@ struct PreviewSectionView: View {
                         .strokeBorder(settings.isRunning ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
                 }
             )
+            
+            // 验证提示
+            if !settings.isContentValid() {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                    Text("标题、描述和Emoji至少需要有一项不为空")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+            }
         }
         .frame(width: 420)
     }
@@ -186,6 +218,11 @@ struct PreviewSectionView: View {
     
     private var testButton: some View {
         Button {
+            // 验证内容
+            guard settings.isContentValid() else {
+                return
+            }
+            
             sendingTest = true
             Task {
                 await controller.sendTest(settings: settings)
@@ -209,7 +246,7 @@ struct PreviewSectionView: View {
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
-        .disabled(sendingTest || settings.isRunning) // 运行时禁用测试按钮
+        .disabled(sendingTest || settings.isRunning || !settings.isContentValid()) // 运行时或内容无效时禁用测试按钮
         .frame(width: 420)
     }
     

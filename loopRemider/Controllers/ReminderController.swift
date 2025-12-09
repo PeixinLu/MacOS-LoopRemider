@@ -28,6 +28,12 @@ final class ReminderController: ObservableObject {
     }
 
     func start(settings: AppSettings) {
+        // 验证内容是否有效
+        guard settings.isContentValid() else {
+            print("⚠️ 无法启动：标题、描述和Emoji至少需要有一项不为空")
+            return
+        }
+        
         stop()
 
         let now = Date()
@@ -71,6 +77,12 @@ final class ReminderController: ObservableObject {
     }
 
     func sendTest(settings: AppSettings) async {
+        // 验证内容是否有效
+        guard settings.isContentValid() else {
+            print("⚠️ 无法发送测试通知：标题、描述和Emoji至少需要有一项不为空")
+            return
+        }
+        
         await sendNotification(settings: settings)
     }
 

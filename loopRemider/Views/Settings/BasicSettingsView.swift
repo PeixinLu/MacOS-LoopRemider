@@ -189,7 +189,7 @@ struct BasicSettingsView: View {
                     Image(systemName: "info.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.blue.opacity(0.6))
-                    Text("范围：10秒到2小时；建议 15～60 分钟")
+                    Text("范围：5秒到2小时；建议 15～60 分钟")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -281,19 +281,19 @@ struct BasicSettingsView: View {
         
         var seconds = value * selectedUnit.multiplier
         
-        // 自动修正：小于10秒则设为10秒
-        if seconds < 10 {
-            seconds = 10
+        // 自动修正：小于5秒则设为5秒
+        if seconds < 5 {
+            seconds = 5
             // 更新输入框显示
             if selectedUnit == .seconds {
-                inputValue = "10"
+                inputValue = "5"
             } else {
-                inputValue = String(format: "%.1f", 10 / 60.0)
+                inputValue = String(format: "%.2f", 5 / 60.0)
             }
         }
         
-        // 限制范围：10秒到7200秒(2小时)
-        if seconds >= 10 && seconds <= 7200 {
+        // 限制范围：5秒到7200秒(2小时)
+        if seconds >= 5 && seconds <= 7200 {
             settings.intervalSeconds = seconds
         }
     }

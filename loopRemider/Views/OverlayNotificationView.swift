@@ -40,30 +40,58 @@ struct OverlayNotificationView: View {
             // 计算是否需要文字阴影（对比度较低时）
             let needsTextShadow = shouldApplyTextShadow(backgroundColor: backgroundColor)
             
+            // 处理字段显示逻辑
+            let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedBody = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedEmoji = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
+            
             // 通知卡片
             VStack(spacing: contentSpacing) {
-                HStack(spacing: contentSpacing) {
-                    Text(emoji.isEmpty ? "⏰" : emoji)
-                        .font(.system(size: iconSize))
-                        .shadow(color: needsTextShadow ? .black.opacity(0.3) : .clear, radius: 2, x: 0, y: 1)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(title.isEmpty ? "提醒" : title)
-                            .font(.system(size: titleFontSize, weight: .semibold))
-                            .foregroundColor(.white)
-                            .shadow(color: needsTextShadow ? .black.opacity(0.5) : .clear, radius: 2, x: 0, y: 1)
-                        
-                        Text(message.isEmpty ? "起来活动一下～" : message)
-                            .font(.system(size: bodyFontSize))
-                            .foregroundColor(.white.opacity(0.9))
-                            .lineLimit(2)
-                            .shadow(color: needsTextShadow ? .black.opacity(0.4) : .clear, radius: 2, x: 0, y: 1)
+                // 判断是否只有emoji（标题和描述都为空）
+                if trimmedTitle.isEmpty && trimmedBody.isEmpty && !trimmedEmoji.isEmpty {
+                    // 只有emoji时，居中显示
+                    HStack {
+                        Spacer()
+                        Text(trimmedEmoji)
+                            .font(.system(size: iconSize))
+                            .shadow(color: needsTextShadow ? .black.opacity(0.3) : .clear, radius: 2, x: 0, y: 1)
+                        Spacer()
                     }
-                    
-                    Spacer()
+                } else {
+                    // 标准布局：emoji在左，文字在右
+                    HStack(spacing: contentSpacing) {
+                        // 只在emoji不为空时显示
+                        if !trimmedEmoji.isEmpty {
+                            Text(trimmedEmoji)
+                                .font(.system(size: iconSize))
+                                .shadow(color: needsTextShadow ? .black.opacity(0.3) : .clear, radius: 2, x: 0, y: 1)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            // 只在title不为空时显示
+                            if !trimmedTitle.isEmpty {
+                                Text(trimmedTitle)
+                                    .font(.system(size: titleFontSize, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .shadow(color: needsTextShadow ? .black.opacity(0.5) : .clear, radius: 2, x: 0, y: 1)
+                            }
+                            
+                            // 只在body不为空时显示
+                            if !trimmedBody.isEmpty {
+                                Text(trimmedBody)
+                                    .font(.system(size: bodyFontSize))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .lineLimit(2)
+                                    .shadow(color: needsTextShadow ? .black.opacity(0.4) : .clear, radius: 2, x: 0, y: 1)
+                            }
+                        }
+                        
+                        Spacer()
+                    }
                 }
-                .padding(20)
             }
+            .padding(.vertical, overlayWidth < 150 ? 10 : 20)
+            .padding(.horizontal, overlayWidth < 150 ? 8 : 20)
             .frame(width: overlayWidth, height: overlayHeight)
             .background(
                 ZStack {

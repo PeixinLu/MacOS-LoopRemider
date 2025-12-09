@@ -157,7 +157,7 @@ struct StyleSettingsView: View {
     private var widthSection: some View {
         SettingRow(icon: "arrow.left.and.right", iconColor: .blue, title: "宽度") {
             HStack(spacing: 8) {
-                Slider(value: $settings.overlayWidth, in: 200...600, step: 10)
+                Slider(value: $settings.overlayWidth, in: 50...600, step: 10)
                     .disabled(settings.isRunning)
                     .frame(width: 120)
                 Text(String(format: "%.0f", settings.overlayWidth))
@@ -172,7 +172,7 @@ struct StyleSettingsView: View {
     private var heightSection: some View {
         SettingRow(icon: "arrow.up.and.down", iconColor: .green, title: "高度") {
             HStack(spacing: 8) {
-                Slider(value: $settings.overlayHeight, in: 80...300, step: 10)
+                Slider(value: $settings.overlayHeight, in: 30...300, step: 10)
                     .disabled(settings.isRunning)
                     .frame(width: 120)
                 Text(String(format: "%.0f", settings.overlayHeight))

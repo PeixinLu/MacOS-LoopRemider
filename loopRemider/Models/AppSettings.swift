@@ -7,9 +7,81 @@
 
 import SwiftUI
 import Combine
+import Foundation
+
+// MARK: - Default Settings Config
+struct DefaultSettingsConfig: Codable {
+    struct Notification: Codable {
+        let title: String
+        let body: String
+        let emoji: String
+    }
+    
+    struct Interval: Codable {
+        let `default`: Double
+        let min: Double
+        let max: Double
+    }
+    
+    struct Overlay: Codable {
+        struct CustomColor: Codable {
+            let r: Double
+            let g: Double
+            let b: Double
+        }
+        
+        let position: String
+        let color: String
+        let opacity: Double
+        let stayDuration: Double
+        let enableFadeOut: Bool
+        let fadeOutDelay: Double
+        let fadeOutDuration: Double
+        let width: Double
+        let height: Double
+        let minWidth: Double
+        let minHeight: Double
+        let maxWidth: Double
+        let maxHeight: Double
+        let titleFontSize: Double
+        let bodyFontSize: Double
+        let iconSize: Double
+        let cornerRadius: Double
+        let edgePadding: Double
+        let contentSpacing: Double
+        let useBlur: Bool
+        let blurIntensity: Double
+        let customColor: CustomColor
+    }
+    
+    struct Animation: Codable {
+        let style: String
+    }
+    
+    struct Screen: Codable {
+        let selection: String
+    }
+    
+    let notification: Notification
+    let interval: Interval
+    let notificationMode: String
+    let overlay: Overlay
+    let animation: Animation
+    let screen: Screen
+}
 
 @MainActor
 final class AppSettings: ObservableObject {
+    // 默认配置
+    static var defaultConfig: DefaultSettingsConfig = {
+        guard let url = Bundle.main.url(forResource: "DefaultSettings", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let config = try? JSONDecoder().decode(DefaultSettingsConfig.self, from: data) else {
+            fatalError("无法加载默认配置文件 DefaultSettings.json")
+        }
+        return config
+    }()
+    
     private enum Keys {
         static let isRunning = "isRunning"
         static let intervalSeconds = "intervalSeconds"
@@ -129,51 +201,53 @@ final class AppSettings: ObservableObject {
     }
 
     init() {
+        let config = Self.defaultConfig
+        
         // Load - 基本设置
         self.isRunning = defaults.object(forKey: Keys.isRunning) as? Bool ?? false
-        self.intervalSeconds = defaults.object(forKey: Keys.intervalSeconds) as? Double ?? 1800
-        self.notifTitle = defaults.string(forKey: Keys.notifTitle) ?? "提醒"
-        self.notifBody = defaults.string(forKey: Keys.notifBody) ?? "起来活动一下～"
-        self.notifEmoji = defaults.string(forKey: Keys.notifEmoji) ?? "⏰"
+        self.intervalSeconds = defaults.object(forKey: Keys.intervalSeconds) as? Double ?? config.interval.default
+        self.notifTitle = defaults.string(forKey: Keys.notifTitle) ?? config.notification.title
+        self.notifBody = defaults.string(forKey: Keys.notifBody) ?? config.notification.body
+        self.notifEmoji = defaults.string(forKey: Keys.notifEmoji) ?? config.notification.emoji
         self.lastFireEpoch = defaults.object(forKey: Keys.lastFire) as? Double ?? 0
         
-        let modeRawValue = defaults.string(forKey: Keys.notificationMode) ?? NotificationMode.overlay.rawValue
+        let modeRawValue = defaults.string(forKey: Keys.notificationMode) ?? config.notificationMode
         self.notificationMode = NotificationMode(rawValue: modeRawValue) ?? .overlay
         
         // Load - 通知样式
-        let positionRawValue = defaults.string(forKey: Keys.overlayPosition) ?? OverlayPosition.topRight.rawValue
+        let positionRawValue = defaults.string(forKey: Keys.overlayPosition) ?? config.overlay.position
         self.overlayPosition = OverlayPosition(rawValue: positionRawValue) ?? .topRight
         
-        let colorRawValue = defaults.string(forKey: Keys.overlayColor) ?? OverlayColor.black.rawValue
+        let colorRawValue = defaults.string(forKey: Keys.overlayColor) ?? config.overlay.color
         self.overlayColor = OverlayColor(rawValue: colorRawValue) ?? .black
         
-        self.overlayOpacity = defaults.object(forKey: Keys.overlayOpacity) as? Double ?? 0.85
-        self.overlayStayDuration = defaults.object(forKey: Keys.overlayStayDuration) as? Double ?? 5.0
-        self.overlayEnableFadeOut = defaults.object(forKey: Keys.overlayEnableFadeOut) as? Bool ?? false
-        self.overlayFadeOutDelay = defaults.object(forKey: Keys.overlayFadeOutDelay) as? Double ?? 2.0
-        self.overlayFadeOutDuration = defaults.object(forKey: Keys.overlayFadeOutDuration) as? Double ?? 2.0
+        self.overlayOpacity = defaults.object(forKey: Keys.overlayOpacity) as? Double ?? config.overlay.opacity
+        self.overlayStayDuration = defaults.object(forKey: Keys.overlayStayDuration) as? Double ?? config.overlay.stayDuration
+        self.overlayEnableFadeOut = defaults.object(forKey: Keys.overlayEnableFadeOut) as? Bool ?? config.overlay.enableFadeOut
+        self.overlayFadeOutDelay = defaults.object(forKey: Keys.overlayFadeOutDelay) as? Double ?? config.overlay.fadeOutDelay
+        self.overlayFadeOutDuration = defaults.object(forKey: Keys.overlayFadeOutDuration) as? Double ?? config.overlay.fadeOutDuration
         
-        let animationRawValue = defaults.string(forKey: Keys.animationStyle) ?? AnimationStyle.fade.rawValue
+        let animationRawValue = defaults.string(forKey: Keys.animationStyle) ?? config.animation.style
         self.animationStyle = AnimationStyle(rawValue: animationRawValue) ?? .fade
         
         // Load - 新增样式配置
-        self.overlayTitleFontSize = defaults.object(forKey: Keys.overlayTitleFontSize) as? Double ?? 17.0
-        self.overlayIconSize = defaults.object(forKey: Keys.overlayIconSize) as? Double ?? 40.0
-        self.overlayCornerRadius = defaults.object(forKey: Keys.overlayCornerRadius) as? Double ?? 12.0
-        self.overlayEdgePadding = defaults.object(forKey: Keys.overlayEdgePadding) as? Double ?? 20.0
-        self.overlayContentSpacing = defaults.object(forKey: Keys.overlayContentSpacing) as? Double ?? 12.0
-        self.overlayUseBlur = defaults.object(forKey: Keys.overlayUseBlur) as? Bool ?? false
-        self.overlayBlurIntensity = defaults.object(forKey: Keys.overlayBlurIntensity) as? Double ?? 0.5
-        self.overlayWidth = defaults.object(forKey: Keys.overlayWidth) as? Double ?? 350.0
-        self.overlayHeight = defaults.object(forKey: Keys.overlayHeight) as? Double ?? 120.0
-        self.overlayBodyFontSize = defaults.object(forKey: Keys.overlayBodyFontSize) as? Double ?? 14.0
+        self.overlayTitleFontSize = defaults.object(forKey: Keys.overlayTitleFontSize) as? Double ?? config.overlay.titleFontSize
+        self.overlayIconSize = defaults.object(forKey: Keys.overlayIconSize) as? Double ?? config.overlay.iconSize
+        self.overlayCornerRadius = defaults.object(forKey: Keys.overlayCornerRadius) as? Double ?? config.overlay.cornerRadius
+        self.overlayEdgePadding = defaults.object(forKey: Keys.overlayEdgePadding) as? Double ?? config.overlay.edgePadding
+        self.overlayContentSpacing = defaults.object(forKey: Keys.overlayContentSpacing) as? Double ?? config.overlay.contentSpacing
+        self.overlayUseBlur = defaults.object(forKey: Keys.overlayUseBlur) as? Bool ?? config.overlay.useBlur
+        self.overlayBlurIntensity = defaults.object(forKey: Keys.overlayBlurIntensity) as? Double ?? config.overlay.blurIntensity
+        self.overlayWidth = defaults.object(forKey: Keys.overlayWidth) as? Double ?? config.overlay.width
+        self.overlayHeight = defaults.object(forKey: Keys.overlayHeight) as? Double ?? config.overlay.height
+        self.overlayBodyFontSize = defaults.object(forKey: Keys.overlayBodyFontSize) as? Double ?? config.overlay.bodyFontSize
         
-        let r = defaults.object(forKey: Keys.overlayCustomColorR) as? Double ?? 0.5
-        let g = defaults.object(forKey: Keys.overlayCustomColorG) as? Double ?? 0.5
-        let b = defaults.object(forKey: Keys.overlayCustomColorB) as? Double ?? 0.5
+        let r = defaults.object(forKey: Keys.overlayCustomColorR) as? Double ?? config.overlay.customColor.r
+        let g = defaults.object(forKey: Keys.overlayCustomColorG) as? Double ?? config.overlay.customColor.g
+        let b = defaults.object(forKey: Keys.overlayCustomColorB) as? Double ?? config.overlay.customColor.b
         self.overlayCustomColor = Color(red: r, green: g, blue: b)
         
-        let screenSelectionRawValue = defaults.string(forKey: Keys.screenSelection) ?? ScreenSelection.active.rawValue
+        let screenSelectionRawValue = defaults.string(forKey: Keys.screenSelection) ?? config.screen.selection
         self.screenSelection = ScreenSelection(rawValue: screenSelectionRawValue) ?? .active
 
         // Persist changes - 基本设置
@@ -215,9 +289,9 @@ final class AppSettings: ObservableObject {
         }.store(in: &cancellables)
         $screenSelection.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.screenSelection) }.store(in: &cancellables)
 
-        // Guardrail: 10秒到2小时
-        if intervalSeconds < 10 { intervalSeconds = 10 }
-        if intervalSeconds > 7200 { intervalSeconds = 7200 }
+        // Guardrail: 5秒到2小时
+        if intervalSeconds < config.interval.min { intervalSeconds = config.interval.min }
+        if intervalSeconds > config.interval.max { intervalSeconds = config.interval.max }
         
         // Guardrail: 透明度 0.3 - 1.0
         if overlayOpacity < 0.3 { overlayOpacity = 0.3 }
@@ -304,5 +378,14 @@ final class AppSettings: ObservableObject {
         case .teal: return .teal
         case .custom: return overlayCustomColor
         }
+    }
+    
+    // 验证内容是否有效（至少有一项不为空）
+    func isContentValid() -> Bool {
+        let trimmedTitle = notifTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedBody = notifBody.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEmoji = notifEmoji.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        return !trimmedTitle.isEmpty || !trimmedBody.isEmpty || !trimmedEmoji.isEmpty
     }
 }
