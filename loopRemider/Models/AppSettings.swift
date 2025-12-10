@@ -8,6 +8,7 @@
 import SwiftUI
 import Combine
 import Foundation
+import LaunchAtLogin
 
 // MARK: - Default Settings Config
 struct DefaultSettingsConfig: Codable {
@@ -114,6 +115,7 @@ final class AppSettings: ObservableObject {
         static let overlayCustomColorB = "overlayCustomColorB"
         static let overlayBodyFontSize = "overlayBodyFontSize"
         static let screenSelection = "screenSelection"
+        static let silentLaunch = "silentLaunch"
     }
 
     private let defaults = UserDefaults.standard
@@ -153,6 +155,9 @@ final class AppSettings: ObservableObject {
     @Published var overlayCustomColor: Color
     @Published var overlayBodyFontSize: Double
     @Published var screenSelection: ScreenSelection
+    
+    // 静默启动设置（开机启动由 LaunchAtLogin 包管理）
+    @Published var silentLaunch: Bool
     
     enum NotificationMode: String, CaseIterable {
         case system = "系统通知"
@@ -249,6 +254,9 @@ final class AppSettings: ObservableObject {
         
         let screenSelectionRawValue = defaults.string(forKey: Keys.screenSelection) ?? config.screen.selection
         self.screenSelection = ScreenSelection(rawValue: screenSelectionRawValue) ?? .active
+        
+        // Load - 静默启动设置（开机启动由 LaunchAtLogin 包管理）
+        self.silentLaunch = defaults.object(forKey: Keys.silentLaunch) as? Bool ?? false
 
         // Persist changes - 基本设置
         $isRunning.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.isRunning) }.store(in: &cancellables)
@@ -288,6 +296,9 @@ final class AppSettings: ObservableObject {
             self.defaults.set(components.blue, forKey: Keys.overlayCustomColorB)
         }.store(in: &cancellables)
         $screenSelection.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.screenSelection) }.store(in: &cancellables)
+        
+        // Persist changes - 静默启动设置
+        $silentLaunch.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.silentLaunch) }.store(in: &cancellables)
 
         // Guardrail: 5秒到2小时
         if intervalSeconds < config.interval.min { intervalSeconds = config.interval.min }

@@ -8,7 +8,7 @@
 
 官网：没有
 
-遇到 bug、想吐槽、想许愿新功能，或者只是想说一句“在吗”，都欢迎来信：
+遇到 bug、想吐槽、想许愿新功能，或者只是想说一句"在吗"，都欢迎来信：
 luhuijiao667@gmail.com
 
 如果可以，麻烦给 Loop Reminder 的 [GitHub 仓库](https://github.com/PeixinLu/MacOS-LoopRemider) 点个 star 😊
@@ -22,3 +22,6 @@ luhuijiao667@gmail.com
 适度休息益脑，长期不歇伤身。
 定时起来活动，享受健康生活 🤪🛌💤
 
+**致谢**: [LaunchAtLogin-Modern](https://github.com/sindresorhus/LaunchAtLogin-Modern)
+
+**友情链接**: [infyniDock - Powerful Window Control for macOS](https://infyniclick.com/)

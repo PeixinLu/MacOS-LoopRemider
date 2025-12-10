@@ -37,3 +37,9 @@
 ## 📄 许可证
 
 MIT License
+
+## 🙏 致谢
+
+感谢以下开源项目的支持：
+
+- [LaunchAtLogin-Modern](https://github.com/sindresorhus/LaunchAtLogin-Modern) - 优雅的开机启动管理库
