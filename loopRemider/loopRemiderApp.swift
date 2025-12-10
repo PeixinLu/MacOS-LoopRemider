@@ -40,14 +40,17 @@ struct loopRemiderApp: App {
     @State private var hasLaunched = false
 
     var body: some Scene {
-        // 首次启动时自动打开窗口
+        // 首次启动时根据设置决定是否打开窗口
         let _ = Task {
             if !hasLaunched {
                 hasLaunched = true
                 // 等待 scene 初始化完成
                 try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
                 await MainActor.run {
-                    openSettingsWindow()
+                    // 只有在非静默启动模式下才打开设置窗口
+                    if !settings.silentLaunch {
+                        openSettingsWindow()
+                    }
                 }
             }
         }

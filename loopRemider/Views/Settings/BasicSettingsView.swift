@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import LaunchAtLogin
 
 struct BasicSettingsView: View {
     @EnvironmentObject private var settings: AppSettings
@@ -48,6 +49,9 @@ struct BasicSettingsView: View {
             
             // 2. 通知频率 Section
             notificationIntervalSection
+            
+            // 2.5 启动设置 Section
+            launchSettingsSection
             
             // 3. 通知方式 Section
             notificationModeSection
@@ -219,6 +223,72 @@ struct BasicSettingsView: View {
         .opacity(settings.isRunning ? 0.6 : 1.0)
     }
     
+    // MARK: - Launch Settings Section
+    
+    private var launchSettingsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                Text("启动设置")
+                    .font(.headline)
+            } icon: {
+                Image(systemName: "power")
+                    .foregroundStyle(.orange)
+            }
+
+            VStack(spacing: 8) {
+                // 开机启动 - 使用 LaunchAtLogin 包
+                HStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "power.circle.fill")
+                            .foregroundStyle(.orange)
+                            .frame(width: 20)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("开机启动")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("系统启动时自动运行此应用")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    LaunchAtLogin.Toggle()
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                }
+                
+                Divider()
+                
+                // 静默启动
+                HStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "eye.slash.fill")
+                            .foregroundStyle(.gray)
+                            .frame(width: 20)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("静默启动")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("启动时不自动打开设置页面")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    Toggle("", isOn: $settings.silentLaunch)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        )
+    }
+    
     // MARK: - Notification Mode Section
     
     private var notificationModeSection: some View {
@@ -297,4 +367,19 @@ struct BasicSettingsView: View {
             settings.intervalSeconds = seconds
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview {
+    @Previewable @State var inputValue = "30"
+    @Previewable @State var selectedUnit = BasicSettingsView.TimeUnit.seconds
+    
+    BasicSettingsView(
+        inputValue: $inputValue,
+        selectedUnit: $selectedUnit
+    )
+    .environmentObject(AppSettings())
+    .frame(width: 600)
+    .padding()
 }
