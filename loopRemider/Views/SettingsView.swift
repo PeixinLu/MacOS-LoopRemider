@@ -27,6 +27,7 @@ struct SettingsView: View {
         case basic = "基本设置"
         case style = "通知样式"
         case animation = "动画和定位"
+        case logs = "日志"
         case update = "检查更新"
         case about = "关于"
 
@@ -37,6 +38,7 @@ struct SettingsView: View {
             case .basic: return "bell.badge.fill"
             case .style: return "paintbrush.pointed.fill"
             case .animation: return "wand.and.stars"
+            case .logs: return "doc.text.magnifyingglass"
             case .update: return "arrow.down.circle"
             case .about: return "info.circle.fill"
             }
@@ -69,6 +71,8 @@ struct SettingsView: View {
                             StyleSettingsView()
                         case .animation:
                             AnimationSettingsView()
+                        case .logs:
+                            LogsView()
                         case .update:
                             UpdateCheckView()
                         case .about:
@@ -77,11 +81,11 @@ struct SettingsView: View {
                     }
                     .padding(24)
                 }
-                .frame(width: selectedCategory == .about || selectedCategory == .update ? nil : 500)
-                .frame(maxWidth: selectedCategory == .about || selectedCategory == .update ? .infinity : nil)
+                .frame(width: (selectedCategory == .about || selectedCategory == .update || selectedCategory == .logs) ? nil : 500)
+                .frame(maxWidth: (selectedCategory == .about || selectedCategory == .update || selectedCategory == .logs) ? .infinity : nil)
                 
                 // 右侧：预览区域（仅在非关于页和检查更新页显示）
-                if selectedCategory != .about && selectedCategory != .update {
+                if selectedCategory != .about && selectedCategory != .update && selectedCategory != .logs {
                     PreviewSectionView(
                         sendingTest: $sendingTest,
                         countdownText: $countdownText,

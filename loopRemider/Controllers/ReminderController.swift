@@ -9,6 +9,7 @@ import SwiftUI
 import UserNotifications
 import AppKit
 import Combine
+import os
 
 @MainActor
 final class ReminderController: ObservableObject {
@@ -22,6 +23,7 @@ final class ReminderController: ObservableObject {
     private var lockObserver: NSObjectProtocol?
     private var unlockObserver: NSObjectProtocol?
     private var lastLockDate: Date?
+    private let logger = EventLogger.shared
     private struct NotificationContent {
         let emoji: String
         let title: String
@@ -62,7 +64,7 @@ final class ReminderController: ObservableObject {
                 _ = try await center.requestAuthorization(options: [.alert, .sound])
             }
         } catch {
-            // Ignore permission errors.
+            logger.log("请求通知权限失败: \(error.localizedDescription)")
         }
     }
 
@@ -75,6 +77,7 @@ final class ReminderController: ObservableObject {
         
         settingsRef = settings
         ensureLockMonitoring()
+        logger.log("启动计时器: 间隔 \(Int(settings.intervalSeconds))s, 模式 \(settings.notificationMode.rawValue)")
         
         stop()
 
@@ -98,6 +101,7 @@ final class ReminderController: ObservableObject {
         restTimer = nil
         isResting = false
         closeOverlay()
+        logger.log("计时器已停止")
     }
 
     func cleanup() {
@@ -107,6 +111,7 @@ final class ReminderController: ObservableObject {
         // 退出应用时强制标记为未运行，避免下次启动仍显示倒计时
         settingsRef?.isRunning = false
         settingsRef?.lastFireEpoch = 0
+        logger.log("应用清理完成，计时状态重置")
     }
 
     private func scheduleTimer(fireAt date: Date, settings: AppSettings) {
@@ -157,6 +162,7 @@ final class ReminderController: ObservableObject {
 
         let payload = content ?? buildContent(settings: settings)
         let style = overlayStyle ?? buildOverlayStyle(settings: settings)
+        logger.log("发送通知: \(payload.title.isEmpty ? "(无标题)" : payload.title) | 模式 \(settings.notificationMode.rawValue)\(isTest ? " [测试]" : "")")
         
         switch settings.notificationMode {
         case .system:
@@ -173,6 +179,7 @@ final class ReminderController: ObservableObject {
             body: body
         )
         let style = buildStartOverlayStyle(settings: settings)
+        logger.log(title)
         await sendNotification(
             settings: settings,
             isTest: true,
@@ -317,6 +324,7 @@ final class ReminderController: ObservableObject {
         Task {
             await sendResetNotification(settings: settings)
         }
+        logger.log("解锁后重置计时器")
     }
 
     private func sendSystemNotification(content payload: NotificationContent) async {
@@ -343,7 +351,7 @@ final class ReminderController: ObservableObject {
         do {
             try await center.add(request)
         } catch {
-            // Ignore delivery errors.
+            logger.log("发送系统通知失败: \(error.localizedDescription)")
         }
     }
     
@@ -368,7 +376,10 @@ final class ReminderController: ObservableObject {
             } ?? NSScreen.main ?? NSScreen.screens.first
         }
         
-        guard let screen else { return }
+        guard let screen else {
+            logger.log("未找到可用屏幕，遮罩通知未显示")
+            return
+        }
         let screenFrame = screen.visibleFrame
         
         // 调试信息：显示屏幕选择
