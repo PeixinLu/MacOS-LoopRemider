@@ -99,9 +99,13 @@ struct OverlayNotificationView: View {
                         // 模糊背景
                         VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
                             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-                        // 颜色叠加层（保证颜色选择生效）
+                        // ... existing code ...
+                        // 第一层颜色叠加（基础颜色层）
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(backgroundColor.opacity(backgroundOpacity * blurIntensity))
+                            .fill(backgroundColor.opacity(backgroundOpacity * 0.5))
+                        // 第二层颜色叠加（强化颜色层）
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(backgroundColor.opacity(backgroundOpacity * blurIntensity * 0.6))
                     } else {
                         // 纯色背景
                         RoundedRectangle(cornerRadius: cornerRadius)
