@@ -12,7 +12,10 @@ import Combine
 
 @MainActor
 final class ReminderController: ObservableObject {
+    @Published var isResting: Bool = false
+
     private var timer: Timer?
+    private var restTimer: Timer?
     private let center = UNUserNotificationCenter.current()
     private var overlayWindow: NSPanel?  // 使用 NSPanel 替代 NSWindow 以支持全屏模式
 
@@ -37,24 +40,19 @@ final class ReminderController: ObservableObject {
         stop()
 
         let now = Date()
-        let nextDate: Date
-        if let last = settings.lastFireDate {
-            let candidate = last.addingTimeInterval(settings.intervalSeconds)
-            nextDate = candidate > now ? candidate : now.addingTimeInterval(settings.intervalSeconds)
-        } else {
-            nextDate = now.addingTimeInterval(settings.intervalSeconds)
-        }
+        // 计算第一次触发的时间
+        let nextDate = now.addingTimeInterval(settings.intervalSeconds)
 
+        // 安排计时器，但不立即触发
         scheduleTimer(fireAt: nextDate, settings: settings)
-
-        Task {
-            await self.sendNotification(settings: settings)
-        }
     }
 
     func stop() {
         timer?.invalidate()
         timer = nil
+        restTimer?.invalidate()
+        restTimer = nil
+        isResting = false
         closeOverlay()
     }
 
@@ -65,6 +63,9 @@ final class ReminderController: ObservableObject {
     }
 
     private func scheduleTimer(fireAt date: Date, settings: AppSettings) {
+        // 更新触发时间，以便UI能正确显示倒计时
+        settings.lastFireEpoch = date.timeIntervalSince1970 - settings.intervalSeconds
+
         let interval = settings.intervalSeconds
         let t = Timer(fire: date, interval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
@@ -76,6 +77,21 @@ final class ReminderController: ObservableObject {
         RunLoop.main.add(t, forMode: .common)
     }
 
+    private func scheduleRestTimer(settings: AppSettings) {
+        isResting = true
+        let restInterval = settings.restSeconds
+
+        // 更新UI状态
+        settings.lastFireEpoch = Date().timeIntervalSince1970
+
+        restTimer = Timer.scheduledTimer(withTimeInterval: restInterval, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            self.isResting = false
+            // 休息结束后，安排下一次常规通知
+            self.scheduleTimer(fireAt: Date().addingTimeInterval(settings.intervalSeconds), settings: settings)
+        }
+    }
+
     func sendTest(settings: AppSettings) async {
         // 验证内容是否有效
         guard settings.isContentValid() else {
@@ -83,17 +99,27 @@ final class ReminderController: ObservableObject {
             return
         }
         
-        await sendNotification(settings: settings)
+        // 测试通知不影响常规计时
+        await sendNotification(settings: settings, isTest: true)
     }
 
-    private func sendNotification(settings: AppSettings) async {
-        settings.markFiredNow()
+    private func sendNotification(settings: AppSettings, isTest: Bool = false) async {
+        if !isTest {
+            settings.markFiredNow()
+        }
         
         switch settings.notificationMode {
         case .system:
             await sendSystemNotification(settings: settings)
         case .overlay:
             showOverlayNotification(settings: settings)
+        }
+
+        // 如果是常规通知且启用了休息模式，则进入休息
+        if !isTest && settings.isRestEnabled {
+            timer?.invalidate()
+            timer = nil
+            scheduleRestTimer(settings: settings)
         }
     }
     

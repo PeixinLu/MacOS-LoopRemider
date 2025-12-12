@@ -13,7 +13,10 @@ struct BasicSettingsView: View {
     
     @Binding var inputValue: String
     @Binding var selectedUnit: TimeUnit
-    
+
+    @State private var restInputValue: String = ""
+    @State private var restSelectedUnit: TimeUnit = .minutes
+
     enum TimeUnit: String, CaseIterable {
         case seconds = "秒"
         case minutes = "分钟"
@@ -49,7 +52,10 @@ struct BasicSettingsView: View {
             
             // 2. 通知频率 Section
             notificationIntervalSection
-            
+
+            // 2.1 休息一下 Section
+            restSection
+
             // 2.5 启动设置 Section
             launchSettingsSection
             
@@ -58,6 +64,7 @@ struct BasicSettingsView: View {
 
             Spacer(minLength: 20)
         }
+        .onAppear(perform: initializeRestInputValue)
     }
     
     // MARK: - Notification Content Section
@@ -160,14 +167,15 @@ struct BasicSettingsView: View {
                         .foregroundStyle(.secondary)
                         .frame(width: 20)
                     
-                    TextField("输入间隔", text: $inputValue)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 100)
-                        .disabled(settings.isRunning)
-                        .onChange(of: inputValue) { _, newValue in
-                            updateIntervalFromInput()
+                    TextField("输入间隔", text: $inputValue, onEditingChanged: { isEditing in
+                        if !isEditing {
+                            validateAndUpdateInterval()
                         }
-                    
+                    })
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 100)
+                    .disabled(settings.isRunning)
+
                     Picker("", selection: $selectedUnit) {
                         ForEach(TimeUnit.allCases, id: \.self) { unit in
                             Text(unit.rawValue).tag(unit)
@@ -177,7 +185,7 @@ struct BasicSettingsView: View {
                     .frame(width: 120)
                     .disabled(settings.isRunning)
                     .onChange(of: selectedUnit) { _, _ in
-                        updateIntervalFromInput()
+                        validateAndUpdateInterval()
                     }
                     
                     Spacer()
@@ -206,6 +214,97 @@ struct BasicSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.orange)
                         Text("请先暂停才能修改频率")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Spacer()
+                    }
+                    .padding(.leading, 24)
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        )
+        .opacity(settings.isRunning ? 0.6 : 1.0)
+    }
+
+    // MARK: - Rest Section
+
+    private var restSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label {
+                Text("休息一下")
+                    .font(.headline)
+            } icon: {
+                Image(systemName: "powersleep")
+                    .foregroundStyle(.purple)
+            }
+
+            VStack(spacing: 8) {
+                Toggle(isOn: $settings.isRestEnabled) {
+                    Text("在每个通知之间插入一段休息时间")
+                        .font(.subheadline)
+                }
+                .disabled(settings.isRunning)
+
+                if settings.isRestEnabled {
+                    HStack(spacing: 12) {
+                        Image(systemName: "timer")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+
+                        TextField("输入时长", text: $restInputValue, onEditingChanged: { isEditing in
+                            if !isEditing {
+                                validateAndUpdateRestInterval()
+                            }
+                        })
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 100)
+                        .disabled(settings.isRunning)
+
+                        Picker("", selection: $restSelectedUnit) {
+                            ForEach(TimeUnit.allCases, id: \.self) { unit in
+                                Text(unit.rawValue).tag(unit)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 120)
+                        .disabled(settings.isRunning)
+                        .onChange(of: restSelectedUnit) { _, _ in
+                            validateAndUpdateRestInterval()
+                        }
+
+                        Spacer()
+
+                        Text(settings.formattedRestInterval())
+                            .font(.system(.body, design: .rounded))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.purple)
+                            .frame(minWidth: 80, alignment: .trailing)
+                    }
+                    .padding(.top, 4)
+                }
+
+                HStack {
+                    Image(systemName: "info.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.purple.opacity(0.6))
+                    Text("休息期间，计时器将暂停")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.leading, 24)
+
+                if settings.isRunning {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text("请先暂停才能修改")
                             .font(.caption)
                             .foregroundStyle(.orange)
                         Spacer()
@@ -343,28 +442,64 @@ struct BasicSettingsView: View {
     }
     
     // MARK: - Helper Methods
-    
-    private func updateIntervalFromInput() {
+
+    private func initializeRestInputValue() {
+        let seconds = settings.restSeconds
+        if seconds >= 60 && Int(seconds) % 60 == 0 {
+            restSelectedUnit = .minutes
+            restInputValue = String(Int(seconds / 60))
+        } else {
+            restSelectedUnit = .seconds
+            restInputValue = String(Int(seconds))
+        }
+    }
+
+    private func validateAndUpdateInterval() {
         guard let value = Double(inputValue), value > 0 else {
+            // 如果输入无效，恢复为当前设置的值
+            initializeInputValue()
             return
         }
         
         var seconds = value * selectedUnit.multiplier
-        
-        // 自动修正：小于5秒则设为5秒
-        if seconds < 5 {
-            seconds = 5
-            // 更新输入框显示
-            if selectedUnit == .seconds {
-                inputValue = "5"
-            } else {
-                inputValue = String(format: "%.2f", 5 / 60.0)
-            }
-        }
-        
+
         // 限制范围：5秒到7200秒(2小时)
-        if seconds >= 5 && seconds <= 7200 {
-            settings.intervalSeconds = seconds
+        if seconds < 5 { seconds = 5 }
+        if seconds > 7200 { seconds = 7200 }
+
+        settings.intervalSeconds = seconds
+
+        // 更新输入框以反映修正后的值
+        initializeInputValue()
+    }
+
+    private func validateAndUpdateRestInterval() {
+        guard let value = Double(restInputValue), value > 0 else {
+            // 如果输入无效，恢复为当前设置的值
+            initializeRestInputValue()
+            return
+        }
+
+        var seconds = value * restSelectedUnit.multiplier
+
+        // 限制范围：5秒到7200秒(2小时)
+        if seconds < 5 { seconds = 5 }
+        if seconds > 7200 { seconds = 7200 }
+
+        settings.restSeconds = seconds
+
+        // 更新输入框以反映修正后的值
+        initializeRestInputValue()
+    }
+
+    private func initializeInputValue() {
+        let seconds = settings.intervalSeconds
+        if seconds >= 60 && Int(seconds) % 60 == 0 {
+            selectedUnit = .minutes
+            inputValue = String(Int(seconds / 60))
+        } else {
+            selectedUnit = .seconds
+            inputValue = String(Int(seconds))
         }
     }
 }

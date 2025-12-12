@@ -23,6 +23,11 @@ struct DefaultSettingsConfig: Codable {
         let min: Double
         let max: Double
     }
+
+    struct Rest: Codable {
+        let enabled: Bool
+        let `default`: Double
+    }
     
     struct Overlay: Codable {
         struct CustomColor: Codable {
@@ -65,6 +70,7 @@ struct DefaultSettingsConfig: Codable {
     
     let notification: Notification
     let interval: Interval
+    let rest: Rest
     let notificationMode: String
     let overlay: Overlay
     let animation: Animation
@@ -116,6 +122,10 @@ final class AppSettings: ObservableObject {
         static let overlayBodyFontSize = "overlayBodyFontSize"
         static let screenSelection = "screenSelection"
         static let silentLaunch = "silentLaunch"
+
+        // 新增：休息一下
+        static let isRestEnabled = "isRestEnabled"
+        static let restSeconds = "restSeconds"
     }
 
     private let defaults = UserDefaults.standard
@@ -131,7 +141,11 @@ final class AppSettings: ObservableObject {
     @Published var notifEmoji: String
 
     @Published var lastFireEpoch: Double
-    
+
+    // Observable values - 休息一下
+    @Published var isRestEnabled: Bool
+    @Published var restSeconds: Double
+
     // Observable values - 通知样式
     @Published var overlayPosition: OverlayPosition
     @Published var overlayColor: OverlayColor
@@ -218,7 +232,11 @@ final class AppSettings: ObservableObject {
         
         let modeRawValue = defaults.string(forKey: Keys.notificationMode) ?? config.notificationMode
         self.notificationMode = NotificationMode(rawValue: modeRawValue) ?? .overlay
-        
+
+        // Load - 休息一下
+        self.isRestEnabled = defaults.object(forKey: Keys.isRestEnabled) as? Bool ?? config.rest.enabled
+        self.restSeconds = defaults.object(forKey: Keys.restSeconds) as? Double ?? config.rest.default
+
         // Load - 通知样式
         let positionRawValue = defaults.string(forKey: Keys.overlayPosition) ?? config.overlay.position
         self.overlayPosition = OverlayPosition(rawValue: positionRawValue) ?? .topRight
@@ -266,7 +284,11 @@ final class AppSettings: ObservableObject {
         $notifEmoji.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.notifEmoji) }.store(in: &cancellables)
         $lastFireEpoch.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.lastFire) }.store(in: &cancellables)
         $notificationMode.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.notificationMode) }.store(in: &cancellables)
-        
+
+        // Persist changes - 休息一下
+        $isRestEnabled.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.isRestEnabled) }.store(in: &cancellables)
+        $restSeconds.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.restSeconds) }.store(in: &cancellables)
+
         // Persist changes - 通知样式
         $overlayPosition.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.overlayPosition) }.store(in: &cancellables)
         $overlayColor.dropFirst().sink { [weak self] in self?.defaults.set($0.rawValue, forKey: Keys.overlayColor) }.store(in: &cancellables)
@@ -303,7 +325,11 @@ final class AppSettings: ObservableObject {
         // Guardrail: 5秒到2小时
         if intervalSeconds < config.interval.min { intervalSeconds = config.interval.min }
         if intervalSeconds > config.interval.max { intervalSeconds = config.interval.max }
-        
+
+        // Guardrail: 休息时间
+        if restSeconds < config.interval.min { restSeconds = config.interval.min }
+        if restSeconds > config.interval.max { restSeconds = config.interval.max }
+
         // Guardrail: 透明度 0.3 - 1.0
         if overlayOpacity < 0.3 { overlayOpacity = 0.3 }
         if overlayOpacity > 1.0 { overlayOpacity = 1.0 }
@@ -348,6 +374,29 @@ final class AppSettings: ObservableObject {
     
     func formattedInterval() -> String {
         let seconds = Int(intervalSeconds)
+        if seconds < 60 {
+            return "\(seconds) 秒"
+        } else if seconds < 3600 {
+            let minutes = seconds / 60
+            let remainingSeconds = seconds % 60
+            if remainingSeconds == 0 {
+                return "\(minutes) 分钟"
+            } else {
+                return "\(minutes) 分 \(remainingSeconds) 秒"
+            }
+        } else {
+            let hours = seconds / 3600
+            let remainingMinutes = (seconds % 3600) / 60
+            if remainingMinutes == 0 {
+                return "\(hours) 小时"
+            } else {
+                return "\(hours) 小时 \(remainingMinutes) 分钟"
+            }
+        }
+    }
+
+    func formattedRestInterval() -> String {
+        let seconds = Int(restSeconds)
         if seconds < 60 {
             return "\(seconds) 秒"
         } else if seconds < 3600 {

@@ -14,7 +14,8 @@ struct PreviewSectionView: View {
     @Binding var sendingTest: Bool
     @Binding var countdownText: String
     @Binding var progressValue: Double
-    
+    @Binding var isResting: Bool
+
     var body: some View {
         VStack(alignment: .center, spacing: 16) {
             // 预览区域
@@ -126,11 +127,11 @@ struct PreviewSectionView: View {
                     HStack(spacing: 8) {
                         Image(systemName: settings.isRunning ? "play.circle.fill" : "pause.circle.fill")
                             .font(.title3)
-                            .foregroundStyle(settings.isRunning ? .green : .orange)
-                        Text(settings.isRunning ? "运行中" : "已暂停")
+                            .foregroundStyle(settings.isRunning ? (isResting ? .purple : .green) : .orange)
+                        Text(settings.isRunning ? (isResting ? "休息中" : "运行中") : "已暂停")
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                            .foregroundStyle(settings.isRunning ? .green : .orange)
+                            .foregroundStyle(settings.isRunning ? (isResting ? .purple : .green) : .orange)
                     }
                     Text(settings.isRunning ? countdownText : "点击启动开始提醒")
                         .font(.caption2)
@@ -174,7 +175,7 @@ struct PreviewSectionView: View {
                 ZStack(alignment: .leading) {
                     // 背景色
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(settings.isRunning ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                        .fill(settings.isRunning ? (isResting ? Color.purple.opacity(0.1) : Color.green.opacity(0.1)) : Color.orange.opacity(0.1))
                     
                     // 进度条（仅运行时显示）
                     if settings.isRunning {
@@ -182,7 +183,10 @@ struct PreviewSectionView: View {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(
                                     LinearGradient(
-                                        colors: [Color.green.opacity(0.25), Color.green.opacity(0.15)],
+                                        colors: [
+                                            (isResting ? Color.purple : Color.green).opacity(0.25),
+                                            (isResting ? Color.purple : Color.green).opacity(0.15)
+                                        ],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )
@@ -194,7 +198,7 @@ struct PreviewSectionView: View {
                     
                     // 边框
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(settings.isRunning ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
+                        .strokeBorder(settings.isRunning ? (isResting ? Color.purple.opacity(0.3) : Color.green.opacity(0.3)) : Color.orange.opacity(0.3), lineWidth: 1)
                 }
             )
             
@@ -258,36 +262,56 @@ struct PreviewSectionView: View {
             progressValue = 0.0
             return
         }
-        
-        // 计算下次通知时间
-        let now = Date()
-        let lastFire = settings.lastFireDate ?? now
-        let nextFire = lastFire.addingTimeInterval(settings.intervalSeconds)
-        let remaining = nextFire.timeIntervalSince(now)
-        
-        // 如果已超时或剩余时间小于1秒，显示将立即发送
-        if remaining <= 1.0 {
-            countdownText = "下次通知：即将发送..."
-            progressValue = 1.0
-            return
-        }
-        
-        // 计算进度（0-1）
-        let elapsed = settings.intervalSeconds - remaining
-        progressValue = max(0, min(1.0, elapsed / settings.intervalSeconds))
-        
-        // 格式化倒计时文本
-        let seconds = Int(remaining)
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        let secs = seconds % 60
-        
-        if hours > 0 {
-            countdownText = String(format: "下次通知：%d:%02d:%02d", hours, minutes, secs)
-        } else if minutes > 0 {
-            countdownText = String(format: "下次通知：%d:%02d", minutes, secs)
+
+        if isResting {
+            // 休息状态
+            let now = Date()
+            let lastFire = settings.lastFireDate ?? now
+            let restEnd = lastFire.addingTimeInterval(settings.restSeconds)
+            let remaining = restEnd.timeIntervalSince(now)
+
+            if remaining <= 1.0 {
+                countdownText = "休息结束，即将开始..."
+                progressValue = 1.0
+                return
+            }
+
+            let elapsed = settings.restSeconds - remaining
+            progressValue = max(0, min(1.0, elapsed / settings.restSeconds))
+
+            let seconds = Int(remaining)
+            let minutes = seconds / 60
+            let secs = seconds % 60
+
+            countdownText = String(format: "休息中... %d:%02d", minutes, secs)
         } else {
-            countdownText = String(format: "下次通知：%d秒", secs)
+            // 正常计时状态
+            let now = Date()
+            let lastFire = settings.lastFireDate ?? now
+            let nextFire = lastFire.addingTimeInterval(settings.intervalSeconds)
+            let remaining = nextFire.timeIntervalSince(now)
+
+            if remaining <= 1.0 {
+                countdownText = "下次通知：即将发送..."
+                progressValue = 1.0
+                return
+            }
+
+            let elapsed = settings.intervalSeconds - remaining
+            progressValue = max(0, min(1.0, elapsed / settings.intervalSeconds))
+
+            let seconds = Int(remaining)
+            let hours = seconds / 3600
+            let minutes = (seconds % 3600) / 60
+            let secs = seconds % 60
+
+            if hours > 0 {
+                countdownText = String(format: "下次通知：%d:%02d:%02d", hours, minutes, secs)
+            } else if minutes > 0 {
+                countdownText = String(format: "下次通知：%d:%02d", minutes, secs)
+            } else {
+                countdownText = String(format: "下次通知：%d秒", secs)
+            }
         }
     }
 }

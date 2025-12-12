@@ -9,6 +9,10 @@
     "min": 5,
     "max": 7200
   },
+  "rest": {
+    "enabled": false,
+    "default": 300
+  },
   "notificationMode": "屏幕遮罩",
   "overlay": {
     "position": "右上角",
