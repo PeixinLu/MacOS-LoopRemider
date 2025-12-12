@@ -68,6 +68,10 @@ struct DefaultSettingsConfig: Codable {
         let selection: String
     }
     
+    struct System: Codable {
+        let resetOnWake: Bool
+    }
+    
     let notification: Notification
     let interval: Interval
     let rest: Rest
@@ -75,6 +79,7 @@ struct DefaultSettingsConfig: Codable {
     let overlay: Overlay
     let animation: Animation
     let screen: Screen
+    let system: System
 }
 
 @MainActor
@@ -122,6 +127,7 @@ final class AppSettings: ObservableObject {
         static let overlayBodyFontSize = "overlayBodyFontSize"
         static let screenSelection = "screenSelection"
         static let silentLaunch = "silentLaunch"
+        static let resetOnWake = "resetOnWake"
 
         // 新增：休息一下
         static let isRestEnabled = "isRestEnabled"
@@ -172,6 +178,7 @@ final class AppSettings: ObservableObject {
     
     // 静默启动设置（开机启动由 LaunchAtLogin 包管理）
     @Published var silentLaunch: Bool
+    @Published var resetOnWakeEnabled: Bool
     
     enum NotificationMode: String, CaseIterable {
         case overlay = "屏幕遮罩"
@@ -275,6 +282,7 @@ final class AppSettings: ObservableObject {
         
         // Load - 静默启动设置（开机启动由 LaunchAtLogin 包管理）
         self.silentLaunch = defaults.object(forKey: Keys.silentLaunch) as? Bool ?? false
+        self.resetOnWakeEnabled = defaults.object(forKey: Keys.resetOnWake) as? Bool ?? config.system.resetOnWake
 
         // Persist changes - 基本设置
         $isRunning.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.isRunning) }.store(in: &cancellables)
@@ -321,6 +329,7 @@ final class AppSettings: ObservableObject {
         
         // Persist changes - 静默启动设置
         $silentLaunch.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.silentLaunch) }.store(in: &cancellables)
+        $resetOnWakeEnabled.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.resetOnWake) }.store(in: &cancellables)
 
         // Guardrail: 5秒到2小时
         if intervalSeconds < config.interval.min { intervalSeconds = config.interval.min }

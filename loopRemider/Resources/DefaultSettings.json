@@ -2,7 +2,7 @@
   "notification": {
     "title": "提醒",
     "body": "起来活动一下",
-    "emoji": "⏰"
+    "emoji": "🔔"
   },
   "interval": {
     "default": 1800,
@@ -47,5 +47,8 @@
   },
   "screen": {
     "selection": "活跃屏幕"
+  },
+  "system": {
+    "resetOnWake": false
   }
 }

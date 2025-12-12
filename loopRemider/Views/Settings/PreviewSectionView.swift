@@ -95,6 +95,7 @@ struct PreviewSectionView: View {
                                     animationStyle: .fade,
                                     position: .center,
                                     padding: 0,
+                                    textColor: nil,
                                     onDismiss: { _ in }
                                 )
                             }

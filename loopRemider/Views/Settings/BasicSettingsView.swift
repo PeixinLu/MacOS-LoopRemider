@@ -285,6 +285,20 @@ struct BasicSettingsView: View {
                     Spacer()
                     Toggle("", isOn: $settings.silentLaunch).labelsHidden().toggleStyle(.switch)
                 }
+                
+                Divider()
+                
+                HStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "lock.rotation").foregroundStyle(.blue).frame(width: 20)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("从锁屏唤醒后重新计时").font(.subheadline).fontWeight(.medium)
+                            Text("锁屏超过 5 分钟重新进入系统时，自动重置计时器").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    Toggle("", isOn: $settings.resetOnWakeEnabled).labelsHidden().toggleStyle(.switch)
+                }
             }
         }.padding(16).background(
             RoundedRectangle(cornerRadius: 12).fill(Color(.controlBackgroundColor)).shadow(color: .black.opacity(0.05), radius: 2, y: 1)

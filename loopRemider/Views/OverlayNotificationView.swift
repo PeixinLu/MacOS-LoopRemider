@@ -29,6 +29,7 @@ struct OverlayNotificationView: View {
     let animationStyle: AppSettings.AnimationStyle
     let position: AppSettings.OverlayPosition
     let padding: Double
+    let textColor: Color?
     let onDismiss: (Bool) -> Void
     
     @State private var opacity: Double = 1.0
@@ -74,7 +75,7 @@ struct OverlayNotificationView: View {
                             if !trimmedTitle.isEmpty {
                                 Text(trimmedTitle)
                                     .font(.system(size: titleFontSize, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(textColor ?? .white)
                                     .shadow(color: needsTextShadow ? .black.opacity(0.5) : .clear, radius: 2, x: 0, y: 1)
                             }
                             
@@ -82,7 +83,7 @@ struct OverlayNotificationView: View {
                             if !trimmedBody.isEmpty {
                                 Text(trimmedBody)
                                     .font(.system(size: bodyFontSize))
-                                    .foregroundColor(.white.opacity(0.9))
+                                    .foregroundColor((textColor ?? .white).opacity(0.9))
                                     .lineLimit(2)
                                     .shadow(color: needsTextShadow ? .black.opacity(0.4) : .clear, radius: 2, x: 0, y: 1)
                             }
