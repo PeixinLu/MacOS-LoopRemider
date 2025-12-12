@@ -30,7 +30,7 @@ struct BasicSettingsView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
             // Header - 统一左对齐样式
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -235,21 +235,24 @@ struct BasicSettingsView: View {
 
     private var restSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label {
-                Text("休息一下")
-                    .font(.headline)
-            } icon: {
-                Image(systemName: "powersleep")
-                    .foregroundStyle(.purple)
+            HStack {
+                Label {
+                    Text("休息一下")
+                        .font(.headline)
+                } icon: {
+                    Image(systemName: "powersleep")
+                        .foregroundStyle(.purple)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $settings.isRestEnabled)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .disabled(settings.isRunning)
             }
 
             VStack(spacing: 8) {
-                Toggle(isOn: $settings.isRestEnabled) {
-                    Text("在每个通知之间插入一段休息时间")
-                        .font(.subheadline)
-                }
-                .disabled(settings.isRunning)
-
                 if settings.isRestEnabled {
                     HStack(spacing: 12) {
                         Image(systemName: "timer")
@@ -292,7 +295,7 @@ struct BasicSettingsView: View {
                     Image(systemName: "info.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.purple.opacity(0.6))
-                    Text("休息期间，计时器将暂停")
+                    Text("在每个通知之间加入休息时间，休息完毕才进入下一次倒计时")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -392,21 +395,25 @@ struct BasicSettingsView: View {
     
     private var notificationModeSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label {
-                Text("通知方式")
+            HStack {
+                Label {
+                    Text("通知方式")
                     .font(.headline)
-            } icon: {
-                Image(systemName: "bell.badge.fill")
+                } icon: {
+                    Image(systemName: "bell.badge.fill")
                     .foregroundStyle(.purple)
-            }
-
-            Picker("", selection: $settings.notificationMode) {
-                ForEach(AppSettings.NotificationMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
                 }
+
+                Spacer()
+
+                Picker("", selection: $settings.notificationMode) {
+                    ForEach(AppSettings.NotificationMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(settings.isRunning)
             }
-            .pickerStyle(.segmented)
-            .disabled(settings.isRunning)
             
             HStack {
                 Image(systemName: "info.circle.fill")
@@ -418,6 +425,58 @@ struct BasicSettingsView: View {
                 Spacer()
             }
             .padding(.leading, 24)
+            
+            // 系统通知模式下的提示文本
+            if settings.notificationMode == .system {
+                VStack(alignment: .leading, spacing: 8) {
+                    // 第一个提示
+                    HStack(spacing: 8) {
+                        Image(systemName: "bell.badge")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("提醒将发送到控制中心。需确保开启了通知权限")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button(action: openNotificationSettings) {
+                                Text("[前往配置]")
+                                    .font(.caption)
+                                    .foregroundStyle(.blue)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        Spacer()
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 4)
+                    
+                    HStack(spacing: 8) {
+                        Image(systemName: "palette")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text("系统通知模式下。配置的外观无法生效。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    
+                    HStack(spacing: 8) {
+                        Image(systemName: "palette")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text("推荐使用遮罩通知！由于macOS的通知机制，内容相似的通知将会被合并在一起，被静默收在通知中心，不会弹出，导致漏接通知提醒。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                }
+                .padding(10)
+                .background(Color.orange.opacity(0.08))
+                .cornerRadius(8)
+                .padding(.leading, 24)
+                .padding(.trailing, 16)
+            }
             
             if settings.isRunning {
                 HStack {
@@ -442,6 +501,13 @@ struct BasicSettingsView: View {
     }
     
     // MARK: - Helper Methods
+
+    private func openNotificationSettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
+        if let url = url {
+            NSWorkspace.shared.open(url)
+        }
+    }
 
     private func initializeRestInputValue() {
         let seconds = settings.restSeconds

@@ -73,7 +73,7 @@ struct PreviewSectionView: View {
                             ZStack {
                                 // NSPanel的背景和边框效果
                                 RoundedRectangle(cornerRadius: settings.overlayCornerRadius * scale)
-                                    .strokeBorder(Color.black.opacity(0.15), lineWidth: 0.5 * scale)
+                                    .strokeBorder(Color.black.opacity(0.2), lineWidth: max(0.5, 0.5 * scale))
                                     .background(
                                         RoundedRectangle(cornerRadius: settings.overlayCornerRadius * scale)
                                             .fill(Color.clear)

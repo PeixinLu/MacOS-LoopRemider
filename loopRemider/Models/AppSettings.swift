@@ -174,8 +174,8 @@ final class AppSettings: ObservableObject {
     @Published var silentLaunch: Bool
     
     enum NotificationMode: String, CaseIterable {
-        case system = "系统通知"
         case overlay = "屏幕遮罩"
+        case system = "系统通知"
     }
     
     enum OverlayPosition: String, CaseIterable {
