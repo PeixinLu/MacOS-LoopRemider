@@ -1,6 +1,6 @@
 {
-  "version": "0.1.6",
-  "url": "https://github.com/PeixinLu/MacOS-LoopRemider/releases/tag/Version0.1.6",
-  "published_at": "2025-12-09T10:35:18Z",
-  "notes": "- 放开部分设置项限制范围，自定义程度更高\n- 优化视觉效果\n- 修复了一些问题"
+  "version": "0.1.7",
+  "url": "https://github.com/PeixinLu/MacOS-LoopRemider/releases/tag/Version0.1.7",
+  "published_at": "2025-12-10T10:32:26Z",
+  "notes": "### 更新日志\n- 新增开机启动和静默启动选项\n- 新增检查更新功能，获取最新releases\n- 修复了一些bug\n- 致谢和友情链接"
 }
