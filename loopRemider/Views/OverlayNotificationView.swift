@@ -29,11 +29,13 @@ struct OverlayNotificationView: View {
     let animationStyle: AppSettings.AnimationStyle
     let position: AppSettings.OverlayPosition
     let padding: Double
-    let onDismiss: () -> Void
+    let onDismiss: (Bool) -> Void
     
     @State private var opacity: Double = 1.0
     @State private var scale: Double = 1.0
     @State private var offset: CGSize = .zero
+    @State private var backgroundOpacityMultiplier: Double = 1.0 // ... existing code ...
+    // 背景透明度乘数，用于淡化效果而不影响整个视图
     
     var body: some View {
         GeometryReader { geometry in
@@ -96,20 +98,23 @@ struct OverlayNotificationView: View {
             .background(
                 ZStack {
                     if useBlur {
+                        // ... existing code ...
                         // 模糊背景
                         VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
                             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                         // ... existing code ...
                         // 第一层颜色叠加（基础颜色层）
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(backgroundColor.opacity(backgroundOpacity * 0.5))
+                            .fill(backgroundColor.opacity(backgroundOpacity * 0.5 * backgroundOpacityMultiplier))
+                        // ... existing code ...
                         // 第二层颜色叠加（强化颜色层）
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(backgroundColor.opacity(backgroundOpacity * blurIntensity * 0.6))
+                            .fill(backgroundColor.opacity(backgroundOpacity * blurIntensity * 0.6 * backgroundOpacityMultiplier))
                     } else {
+                        // ... existing code ...
                         // 纯色背景
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(backgroundColor.opacity(backgroundOpacity))
+                            .fill(backgroundColor.opacity(backgroundOpacity * backgroundOpacityMultiplier))
                     }
                 }
                 .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
@@ -121,7 +126,8 @@ struct OverlayNotificationView: View {
             // 只有卡片区域响应点击
             .contentShape(Rectangle())
             .onTapGesture {
-                onDismiss()
+                onDismiss(true) // ... existing code ...
+                // true 表示用户手动点击关闭
             }
             // 根据position和padding计算对齐位置
             .padding(edgeInsetsForPosition())
@@ -219,13 +225,14 @@ struct OverlayNotificationView: View {
     
     private func startExitTimer(containerSize: CGSize) {
         if enableFadeOut {
-            // 启用渐透明：先停留，然后开始变淡
+            // 启用渐透明：先停留，然后开始变淡到10%
             DispatchQueue.main.asyncAfter(deadline: .now() + fadeOutDelay) {
                 applyFadeOutAnimation()
             }
-            // 总时间后关闭
+            // ... existing code ...
+            // 在stayDuration时刻执行退出动画
             DispatchQueue.main.asyncAfter(deadline: .now() + stayDuration) {
-                onDismiss()
+                applyExitAnimation(containerSize: containerSize)
             }
         } else {
             // 不启用渐透明：到时间后直接执行退出动画
@@ -235,10 +242,11 @@ struct OverlayNotificationView: View {
         }
     }
     
-    // 渐透明动画
+    // 渐透明动画：淡化背景到最低10%透明度后保持，保持一般视图可见
     private func applyFadeOutAnimation() {
         withAnimation(.linear(duration: fadeOutDuration)) {
-            opacity = 0.0
+            backgroundOpacityMultiplier = 0.5 // ... existing code ...
+            // 淡化背景不是整个视图，保持边框清晰
         }
     }
     
@@ -248,6 +256,8 @@ struct OverlayNotificationView: View {
             withAnimation(.easeInOut(duration: 0.3)) {
                 opacity = 0.0
                 scale = 0.95
+                backgroundOpacityMultiplier = 0.1 // ... existing code ...
+                // 应用褊出动画时也保持背景格外蠟化
             }
         case .slide:
             let direction = slideDirectionForPosition()
@@ -273,8 +283,9 @@ struct OverlayNotificationView: View {
             }
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            onDismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            onDismiss(false) // ... existing code ...
+            // false 表示通知自动消失
         }
     }
     

@@ -114,13 +114,6 @@ final class ReminderController: ObservableObject {
         case .overlay:
             showOverlayNotification(settings: settings)
         }
-
-        // 如果是常规通知且启用了休息模式，则进入休息
-        if !isTest && settings.isRestEnabled {
-            timer?.invalidate()
-            timer = nil
-            scheduleRestTimer(settings: settings)
-        }
     }
     
     private func sendSystemNotification(settings: AppSettings) async {
@@ -311,13 +304,25 @@ final class ReminderController: ObservableObject {
             animationStyle: settings.animationStyle,
             position: settings.overlayPosition,
             padding: padding,
-            onDismiss: { [weak self, weak window] in
+            onDismiss: { [weak self, weak window] isUserDismiss in
                 Task {
                     guard let self, let w = window else { return }
                     if let current = self.overlayWindow, current === w {
-                        w.orderOut(nil)
-                        w.close()
+                        // ... existing code ...
+                        // 优集窗口关闭，防止闪烁
+                        w.alphaValue = 0 // 先设置不透明度为0，立即隐藏
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak w] in
+                            w?.orderOut(nil)
+                            w?.close()
+                        }
                         self.overlayWindow = nil
+                        
+                        // 只有用户手动关闭通知时才触发休息机制
+                        if isUserDismiss && settings.isRestEnabled {
+                            self.timer?.invalidate()
+                            self.timer = nil
+                            self.scheduleRestTimer(settings: settings)
+                        }
                     }
                 }
             }

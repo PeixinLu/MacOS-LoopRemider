@@ -71,16 +71,8 @@ struct PreviewSectionView: View {
                             
                             // NSPanel外边框容器
                             ZStack {
-                                // NSPanel的背景和边框效果
-                                RoundedRectangle(cornerRadius: settings.overlayCornerRadius * scale)
-                                    .strokeBorder(Color.black.opacity(0.2), lineWidth: max(0.5, 0.5 * scale))
-                                    .background(
-                                        RoundedRectangle(cornerRadius: settings.overlayCornerRadius * scale)
-                                            .fill(Color.clear)
-                                    )
-                                    .frame(width: (settings.overlayWidth + 1) * scale, height: (settings.overlayHeight + 1) * scale)
-                                
-                                // 实际通知内容
+                                // 此处不会添加颜色边框，因为NSPanel本身对应渲染
+                                // 仅展示实际通知内容
                                 OverlayNotificationView(
                                     emoji: settings.notifEmoji,
                                     title: settings.notifTitle,
@@ -103,7 +95,7 @@ struct PreviewSectionView: View {
                                     animationStyle: .fade,
                                     position: .center,
                                     padding: 0,
-                                    onDismiss: {}
+                                    onDismiss: { _ in }
                                 )
                             }
                         }
