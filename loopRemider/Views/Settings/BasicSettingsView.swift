@@ -87,7 +87,18 @@ struct BasicSettingsView: View {
                 // Emoji图标
                 HStack(spacing: 8) {
                     Text("图标").font(.subheadline).foregroundStyle(.secondary).frame(width: 60, alignment: .leading)
-                    TextField("Emoji（显示在标题前）", text: $settings.notifEmoji).textFieldStyle(.roundedBorder).disabled(settings.isRunning)
+                    TextField("Emoji（显示在标题前）", text: $settings.notifEmoji)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(settings.isRunning)
+                    
+                    Button {
+                        NSApp.orderFrontCharacterPalette(nil) // 打开系统表情/符号面板
+                    } label: {
+                        Image(systemName: "face.smiling.fill")
+                            .foregroundStyle(.blue)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("打开系统表情与符号面板")
                 }
 
                 HStack {
