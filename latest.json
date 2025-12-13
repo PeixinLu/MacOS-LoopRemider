@@ -1,6 +1,6 @@
 {
-  "version": "0.1.7",
-  "url": "https://github.com/PeixinLu/MacOS-LoopRemider/releases/tag/Version0.1.7",
-  "published_at": "2025-12-10T10:32:26Z",
-  "notes": "### 更新日志\n- 新增开机启动和静默启动选项\n- 新增检查更新功能，获取最新releases\n- 修复了一些bug\n- 致谢和友情链接"
+  "version": "0.1.8",
+  "url": "https://github.com/PeixinLu/MacOS-LoopRemider/releases/tag/Version0.1.8",
+  "published_at": "2025-12-13T07:00:41Z",
+  "notes": "### 更新日志\n- 新增\"休息一下\"功能：点击关闭通知后会进入“冷却时间”，冷却结束再进入下一轮倒计时\n- 新增“从锁屏唤醒后重新计时”功能：打开后，锁屏超过5分钟重新进入系统时，会自动重置计时器，该功能可选择是否打开\n- 添加“日志”页面：记录计时器日志，方便定位错误（如有），日志文件保存在本地\n- 添加emoji选择面板：方便快速找到心仪的emoji表情\n- 优化页面布局\n- 优化通知的自定义颜色效果\n- 修复一些已知错误\n\n在使用过程中有什么问题或建议，欢迎到[GitHub](https://github.com/PeixinLu/MacOS-LoopRemider/issues)提issues\n或者加入反馈群⬇\uFE0F，我将尽快修复\n\n绿色：\n![](https://zyxh-1317327611.cos.ap-guangzhou.myqcloud.com/ob/ce1c6fe4a366974c74742f9b88c5c689.jpg)\n小红书：\n![](https://zyxh-1317327611.cos.ap-guangzhou.myqcloud.com/ob/eddc9659840aadaef69ea0f3bf4dc02b.jpg)"
 }
