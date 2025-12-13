@@ -14,7 +14,7 @@ struct LogsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-            // 页面标题
+            // 页面标题 + 操作按钮 - 固定
             HStack {
                 PageHeader(
                     icon: "doc.text.magnifyingglass",
@@ -49,7 +49,7 @@ struct LogsView: View {
                 .buttonStyle(.bordered)
             }
             
-            // 日志内容
+            // 日志内容 - 可滚动
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     if logs.isEmpty {
@@ -71,6 +71,7 @@ struct LogsView: View {
                     }
                 }
                 .padding(.vertical, DesignTokens.Spacing.xs)
+                .padding(.trailing, DesignTokens.Spacing.lg)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

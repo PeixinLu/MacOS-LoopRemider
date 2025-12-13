@@ -58,29 +58,27 @@ struct SettingsView: View {
         } detail: {
             // 右侧内容区 - 水平布局
             HStack(alignment: .top, spacing: DesignTokens.Spacing.xxl) {
-                // 左侧：表单区域
-                ScrollView {
-                    Group {
-                        switch selectedCategory {
-                        case .basic:
-                            BasicSettingsView(
-                                inputValue: $inputValue,
-                                selectedUnit: $selectedUnit
-                            )
-                        case .style:
-                            StyleSettingsView()
-                        case .animation:
-                            AnimationSettingsView()
-                        case .logs:
-                            LogsView()
-                        case .update:
-                            UpdateCheckView()
-                        case .about:
-                            AboutView()
-                        }
+                // 左侧：表单区域（各页面内部处理滚动）
+                Group {
+                    switch selectedCategory {
+                    case .basic:
+                        BasicSettingsView(
+                            inputValue: $inputValue,
+                            selectedUnit: $selectedUnit
+                        )
+                    case .style:
+                        StyleSettingsView()
+                    case .animation:
+                        AnimationSettingsView()
+                    case .logs:
+                        LogsView()
+                    case .update:
+                        UpdateCheckView()
+                    case .about:
+                        AboutView()
                     }
-                    .padding(DesignTokens.Spacing.xxl)
                 }
+                .padding(.leading, DesignTokens.Spacing.xxl)
                 .frame(width: shouldShowPreview ? 480 : nil)
                 .frame(maxWidth: shouldShowPreview ? nil : .infinity)
                 

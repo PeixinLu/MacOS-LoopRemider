@@ -33,7 +33,7 @@ struct BasicSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            // 页面标题
+            // 页面标题 - 固定
             PageHeader(
                 icon: "bell.badge.fill",
                 iconColor: .blue,
@@ -41,22 +41,27 @@ struct BasicSettingsView: View {
                 subtitle: "自定义您的循环提醒"
             )
 
-            // 1. 通知内容
-            notificationContentSection
-            
-            // 2. 通知频率
-            notificationIntervalSection
-            
-            // 3. 休息一下
-            restSection
-            
-            // 4. 启动设置
-            launchSettingsSection
-            
-            // 5. 通知方式
-            notificationModeSection
-
-            Spacer(minLength: DesignTokens.Spacing.xl)
+            // 内容区域 - 可滚动
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+                    // 1. 通知内容
+                    notificationContentSection
+                    
+                    // 2. 通知频率
+                    notificationIntervalSection
+                    
+                    // 3. 休息一下
+                    restSection
+                    
+                    // 4. 启动设置
+                    launchSettingsSection
+                    
+                    // 5. 通知方式
+                    notificationModeSection
+                }
+                .padding(.bottom, DesignTokens.Spacing.xl)
+                .padding(.trailing, DesignTokens.Spacing.xl)
+            }
         }
         .onAppear(perform: initializeRestInputValue)
     }
@@ -80,20 +85,28 @@ struct BasicSettingsView: View {
                 }
                 
                 SettingRow(icon: "face.smiling", iconColor: .blue, title: "图标") {
-                    HStack(spacing: DesignTokens.Spacing.sm) {
+                    ZStack(alignment: .trailing) {
                         TextField("Emoji（显示在标题前）", text: $settings.notifEmoji)
                             .textFieldStyle(.roundedBorder)
                             .disabled(settings.isRunning)
+                            .padding(.trailing, 32)
                         
                         Button {
-                            NSApp.orderFrontCharacterPalette(nil)
+                            // 清除其他输入框的聚焦
+                            NSApp.keyWindow?.makeFirstResponder(nil)
+                            // 延迟一点打开表情面板，以便在 emoji 输入框上显示
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                NSApp.orderFrontCharacterPalette(nil)
+                            }
                         } label: {
                             Image(systemName: "face.smiling.fill")
                                 .foregroundStyle(.blue)
+                                .padding(6)
                         }
-//                        .buttonStyle(.borderless)
+                        .buttonStyle(.borderless)
                         .help("打开系统表情与符号面板")
                         .disabled(settings.isRunning)
+                        .padding(.trailing, 4)
                     }
                 }
                 

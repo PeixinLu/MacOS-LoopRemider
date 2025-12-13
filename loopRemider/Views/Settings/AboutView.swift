@@ -13,7 +13,7 @@ struct AboutView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-            // 页面标题
+            // 页面标题 - 固定
             PageHeader(
                 icon: "info.circle.fill",
                 iconColor: .blue,
@@ -21,6 +21,7 @@ struct AboutView: View {
                 subtitle: "了解更多应用信息"
             )
             
+            // 内容区域 - 可滚动
             if isLoading {
                 Spacer()
                 HStack {

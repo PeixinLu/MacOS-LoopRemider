@@ -12,7 +12,7 @@ struct AnimationSettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-            // 页面标题
+            // 页面标题 - 固定
             PageHeader(
                 icon: "wand.and.stars",
                 iconColor: .purple,
@@ -20,6 +20,7 @@ struct AnimationSettingsView: View {
                 subtitle: "自定义通知动画和位置"
             )
             
+            // 内容区域
             if settings.notificationMode == .overlay {
                 ScrollView {
                     VStack(spacing: DesignTokens.Spacing.md) {
@@ -48,6 +49,7 @@ struct AnimationSettingsView: View {
                         }
                     }
                     .padding(.bottom, DesignTokens.Spacing.xl)
+                    .padding(.trailing, DesignTokens.Spacing.lg)
                 }
                 
                 if settings.isRunning {

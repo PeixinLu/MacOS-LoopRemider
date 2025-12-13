@@ -12,7 +12,7 @@ struct StyleSettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-            // 页面标题
+            // 页面标题 - 固定
             PageHeader(
                 icon: "paintbrush.pointed.fill",
                 iconColor: .pink,
@@ -20,7 +20,7 @@ struct StyleSettingsView: View {
                 subtitle: "自定义屏幕遮罩通知外观"
             )
             
-            // 样式设置仅在overlay模式下可用
+            // 内容区域
             if settings.notificationMode == .overlay {
                 ScrollView {
                     VStack(spacing: DesignTokens.Spacing.md) {
@@ -54,6 +54,7 @@ struct StyleSettingsView: View {
                         blurSection
                     }
                     .padding(.bottom, DesignTokens.Spacing.xl)
+                    .padding(.trailing, DesignTokens.Spacing.lg)
                 }
                 
                 if settings.isRunning {
