@@ -4,64 +4,48 @@ struct UpdateCheckView: View {
     @StateObject private var updateChecker = UpdateChecker()
     
     var body: some View {
-        VStack(spacing: 20) {
-            // 标题
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+            // 页面标题
             HStack {
-                Image(systemName: "arrow.down.circle")
-                    .font(.title)
-                    .foregroundColor(.blue)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("检查更新")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    Text("当前版本：\(updateChecker.currentVersion)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                PageHeader(
+                    icon: "arrow.down.circle.fill",
+                    iconColor: .blue,
+                    title: "检查更新",
+                    subtitle: "当前版本：\(updateChecker.currentVersion)"
+                )
+                
                 Spacer()
-            }
-            .padding(.top)
-            
-            Divider()
-            
-            // 内容区域
-            if updateChecker.isChecking {
-                VStack(spacing: 15) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                    Text("正在检查更新...")
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let result = updateChecker.checkResult {
-                resultView(for: result)
-            } else {
-                VStack(spacing: 15) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 50))
-                        .foregroundColor(.secondary)
-                    Text("点击下方按钮检查更新")
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            
-            Divider()
-            
-            // 底部按钮
-            HStack {
+                
                 if updateChecker.checkResult == nil || !updateChecker.isChecking {
                     Button("检查更新") {
                         updateChecker.checkForUpdates()
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                
-                Spacer()
             }
-            .padding(.bottom)
+            
+            Divider()
+            
+            // 内容区域
+            if updateChecker.isChecking {
+                VStack(spacing: DesignTokens.Spacing.lg) {
+                    Spacer()
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("正在检查更新...")
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+            } else if let result = updateChecker.checkResult {
+                resultView(for: result)
+            } else {
+                EmptyStateView(
+                    icon: "magnifyingglass",
+                    title: "点击上方按钮检查更新"
+                )
+            }
         }
-        .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
@@ -69,7 +53,8 @@ struct UpdateCheckView: View {
     private func resultView(for result: UpdateCheckResult) -> some View {
         switch result {
         case .upToDate:
-            VStack(spacing: 15) {
+            VStack(spacing: DesignTokens.Spacing.lg) {
+                Spacer()
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 50))
                     .foregroundColor(.green)
@@ -78,14 +63,15 @@ struct UpdateCheckView: View {
                     .fontWeight(.medium)
                 Text("当前版本：\(updateChecker.currentVersion)")
                     .foregroundColor(.secondary)
+                Spacer()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
             
         case .newVersionAvailable(let release):
             ScrollView {
-                VStack(alignment: .leading, spacing: 15) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
                     // 新版本提示
-                    HStack {
+                    HStack(spacing: DesignTokens.Spacing.sm) {
                         Image(systemName: "sparkles")
                             .foregroundColor(.orange)
                         Text("发现新版本")
@@ -94,7 +80,7 @@ struct UpdateCheckView: View {
                     }
                     
                     // 版本信息
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                         HStack {
                             Text("当前版本：")
                                 .foregroundColor(.secondary)
@@ -116,30 +102,24 @@ struct UpdateCheckView: View {
                             }
                         }
                     }
-                    .padding()
+                    .padding(DesignTokens.Spacing.md)
                     .background(Color.blue.opacity(0.1))
-                    .cornerRadius(8)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall))
                     
                     // 更新说明
                     if !release.body.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                             Text("更新说明：")
                                 .font(.headline)
                             Text(release.body)
                                 .font(.system(.body, design: .monospaced))
                                 .textSelection(.enabled)
                         }
-                        .padding()
+                        .padding(DesignTokens.Spacing.md)
                         .background(Color.secondary.opacity(0.05))
-                        .cornerRadius(8)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall))
                         
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("请前往GitHub下载并手动替换app⬇️")
-                            
-                        }
-                        .padding()
-                        .background(Color.secondary.opacity(0.05))
-                        .cornerRadius(8)
+                        InfoHint("请前往GitHub下载并手动替换app", color: .orange)
                     }
                     
                     // 下载按钮
@@ -151,19 +131,20 @@ struct UpdateCheckView: View {
                             Text("前往 GitHub 下载")
                         }
                         .frame(maxWidth: .infinity)
-                                .frame(height: 20)
-                        .padding(8)
+                        .frame(height: 20)
+                        .padding(DesignTokens.Spacing.sm)
                         .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(8)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall))
                     }
                     .buttonStyle(.plain)
                 }
-                .padding()
+                .padding(DesignTokens.Spacing.md)
             }
             
         case .error(let message):
-            VStack(spacing: 15) {
+            VStack(spacing: DesignTokens.Spacing.lg) {
+                Spacer()
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 50))
                     .foregroundColor(.red)
@@ -173,9 +154,10 @@ struct UpdateCheckView: View {
                 Text(message)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
+                Spacer()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding()
+            .frame(maxWidth: .infinity)
+            .padding(DesignTokens.Spacing.md)
         }
     }
     

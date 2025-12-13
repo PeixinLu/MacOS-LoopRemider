@@ -2,12 +2,16 @@
   "notification": {
     "title": "提醒",
     "body": "起来活动一下",
-    "emoji": "⏰"
+    "emoji": "🔔"
   },
   "interval": {
     "default": 1800,
     "min": 5,
     "max": 7200
+  },
+  "rest": {
+    "enabled": false,
+    "default": 300
   },
   "notificationMode": "屏幕遮罩",
   "overlay": {
@@ -31,7 +35,7 @@
     "edgePadding": 20.0,
     "contentSpacing": 12.0,
     "useBlur": false,
-    "blurIntensity": 0.5,
+    "blurIntensity": 0.75,
     "customColor": {
       "r": 0.5,
       "g": 0.5,
@@ -43,5 +47,8 @@
   },
   "screen": {
     "selection": "活跃屏幕"
+  },
+  "system": {
+    "resetOnWake": false
   }
 }
