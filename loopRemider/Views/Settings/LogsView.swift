@@ -13,24 +13,33 @@ struct LogsView: View {
     private let blockedKeywords = ["script", "javascript:", "<", ">", "file://", "vscode://", "http://", "https://"]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+            // 页面标题
             HStack {
-                Label("日志", systemImage: "doc.text.magnifyingglass")
-                    .font(.title3)
-                    .fontWeight(.semibold)
+                PageHeader(
+                    icon: "doc.text.magnifyingglass",
+                    iconColor: .orange,
+                    title: "日志",
+                    subtitle: "记录通知发送、启动/重置/停止等关键事件"
+                )
+                
                 Spacer()
-                HStack(spacing: 12) {
+                
+                // 操作按钮
+                HStack(spacing: DesignTokens.Spacing.md) {
                     Button {
                         reload()
                     } label: {
                         Label("刷新", systemImage: "arrow.clockwise")
                     }
+                    
                     Button {
                         logger.clear()
                         reload()
                     } label: {
                         Label("清空", systemImage: "trash")
                     }
+                    
                     Button {
                         logger.openInFinder()
                     } label: {
@@ -40,32 +49,28 @@ struct LogsView: View {
                 .buttonStyle(.bordered)
             }
             
-            Text("记录通知发送、启动/重置/停止等关键事件，方便排查问题。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            
+            // 日志内容
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 6) {
+                LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     if logs.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "doc.text.fill").font(.largeTitle).foregroundStyle(.secondary)
-                            Text("暂无日志").foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 260)
+                        EmptyStateView(
+                            icon: "doc.text.fill",
+                            title: "暂无日志"
+                        )
                     } else {
                         ForEach(Array(logs.enumerated()), id: \.offset) { _, line in
                             Text(sanitize(line))
                                 .font(.system(.callout, design: .monospaced))
-                                .lineLimit(1) // 单行展示，不换行
+                                .lineLimit(1)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 3)
-                                .padding(.horizontal, 8)
+                                .padding(.vertical, DesignTokens.Spacing.xxs)
+                                .padding(.horizontal, DesignTokens.Spacing.sm)
                                 .background(Color(.textBackgroundColor))
-                                .cornerRadius(6)
+                                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall))
                         }
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, DesignTokens.Spacing.xs)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

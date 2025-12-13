@@ -11,94 +11,55 @@ struct AnimationSettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Header
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: "wand.and.stars")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.purple.gradient)
-                    Text("动画和定位")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                }
-                Text("自定义通知动画和位置")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.top, 12)
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+            // 页面标题
+            PageHeader(
+                icon: "wand.and.stars",
+                iconColor: .purple,
+                title: "动画和定位",
+                subtitle: "自定义通知动画和位置"
+            )
             
             if settings.notificationMode == .overlay {
                 ScrollView {
-                    VStack(spacing: 16) {
-                        Group {
-                            // 屏幕选择
-                            screenSelectionSection
-                            
-                            Divider().padding(.vertical, 4)
-                            
-                            // 位置
-                            positionSection
-                            
-                            Divider().padding(.vertical, 4)
-                            
-                            // 动画类型
-                            animationTypeSection
-                            
-                            Divider().padding(.vertical, 4)
-                            
-                            // 停留时间
-                            stayDurationSection
-                            
-                            Divider().padding(.vertical, 4)
-                            
-                            // 渐透明开关
-                            fadeOutToggleSection
-                            
-                            // 变淡延迟（仅当启用渐透明时显示）
-                            if settings.overlayEnableFadeOut {
-                                fadeOutDelaySection
-                                
-                                // 变淡持续时间
-                                fadeOutDurationSection
-                            }
+                    VStack(spacing: DesignTokens.Spacing.md) {
+                        // 屏幕选择
+                        screenSelectionSection
+                        
+                        Divider().padding(.vertical, DesignTokens.Spacing.xs)
+                        
+                        // 位置和动画
+                        positionSection
+                        animationTypeSection
+                        
+                        Divider().padding(.vertical, DesignTokens.Spacing.xs)
+                        
+                        // 停留时间
+                        stayDurationSection
+                        
+                        Divider().padding(.vertical, DesignTokens.Spacing.xs)
+                        
+                        // 渐透明设置
+                        fadeOutToggleSection
+                        
+                        if settings.overlayEnableFadeOut {
+                            fadeOutDelaySection
+                            fadeOutDurationSection
                         }
                     }
-                    .padding(.bottom, 20)
+                    .padding(.bottom, DesignTokens.Spacing.xl)
                 }
-                .padding(.bottom, 20)
                 
                 if settings.isRunning {
-                    HStack(spacing: 8) {
-                        Image(systemName: "lock.fill")
-                            .foregroundStyle(.orange)
-                        Text("请先暂停才能修改动画设置")
-                            .font(.callout)
-                            .foregroundStyle(.orange)
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.orange.opacity(0.1))
-                    )
+                    LockCard(message: "请先暂停才能修改动画设置")
                 }
             } else {
                 // 系统通知模式提示
-                VStack(spacing: 12) {
-                    Image(systemName: "bell.badge.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
-                    Text("仅在屏幕遮罩模式下可用")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Text("请在基本设置中将通知方式改为屏幕遮罩")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(40)
+                EmptyStateView(
+                    icon: "bell.badge.fill",
+                    title: "仅在屏幕遮罩模式下可用",
+                    subtitle: "请在基本设置中将通知方式改为屏幕遮罩"
+                )
             }
         }
     }
@@ -106,7 +67,7 @@ struct AnimationSettingsView: View {
     // MARK: - Setting Sections
     
     private var screenSelectionSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             SettingRow(icon: "display.2", iconColor: .indigo, title: "显示屏幕") {
                 Picker("", selection: $settings.screenSelection) {
                     ForEach(AppSettings.ScreenSelection.allCases, id: \.self) { selection in
@@ -118,17 +79,7 @@ struct AnimationSettingsView: View {
                 .frame(width: 220)
             }
             
-            HStack {
-                Image(systemName: "info.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.indigo.opacity(0.6))
-                Text(settings.screenSelection.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.leading, 24)
-            .padding(.top, -8)
+            InfoHint(settings.screenSelection.description, color: .indigo)
         }
     }
     
@@ -159,40 +110,30 @@ struct AnimationSettingsView: View {
     }
     
     private var stayDurationSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             SettingRow(icon: "timer", iconColor: .orange, title: "停留时间") {
                 let maxStayDuration = max(1.0, settings.intervalSeconds - 1.0)
-                HStack(spacing: 8) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
                     Slider(value: $settings.overlayStayDuration, in: 1...min(60, maxStayDuration), step: 0.5)
                         .disabled(settings.isRunning)
-                        .frame(width: 120)
+                        .frame(width: DesignTokens.Layout.sliderWidth)
                         .onChange(of: settings.overlayStayDuration) { _, _ in
                             settings.validateTimingSettings()
                         }
                     Text(String(format: "%.1f秒", settings.overlayStayDuration))
-                        .font(.system(.body, design: .rounded))
+                        .font(DesignTokens.Typography.value)
                         .fontWeight(.medium)
                         .foregroundStyle(.orange)
-                        .frame(width: 50)
+                        .frame(width: DesignTokens.Layout.valueDisplayWidth, alignment: .trailing)
                 }
             }
             
-            HStack {
-                Image(systemName: "info.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange.opacity(0.6))
-                Text("通知显示后停留的时间，最大为下次通知时间-过渡动画时间")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.leading, 24)
-            .padding(.top, -8)
+            InfoHint("通知显示后停留的时间，最大为下次通知时间-过渡动画时间", color: .orange)
         }
     }
     
     private var fadeOutToggleSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             SettingRow(icon: "eye.slash.fill", iconColor: .purple, title: "我透明了") {
                 Toggle("", isOn: $settings.overlayEnableFadeOut)
                     .toggleStyle(.switch)
@@ -200,83 +141,53 @@ struct AnimationSettingsView: View {
                     .labelsHidden()
             }
             
-            HStack {
-                Image(systemName: "info.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.purple.opacity(0.6))
-                Text("为减少对内容的干扰，通知弹出后会慢慢变透明，直至下一个通知到来")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.leading, 24)
-            .padding(.top, -8)
+            InfoHint("为减少对内容的干扰，通知弹出后会慢慢变透明，直至下一个通知到来", color: .purple)
         }
     }
     
     private var fadeOutDelaySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             SettingRow(icon: "clock.arrow.2.circlepath", iconColor: .cyan, title: "变淡延迟") {
                 let maxFadeOutDelay = max(0.5, settings.overlayStayDuration - settings.overlayFadeOutDuration)
-                HStack(spacing: 8) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
                     Slider(value: $settings.overlayFadeOutDelay, in: 0...maxFadeOutDelay, step: 0.5)
                         .disabled(settings.isRunning)
-                        .frame(width: 120)
+                        .frame(width: DesignTokens.Layout.sliderWidth)
                         .onChange(of: settings.overlayFadeOutDelay) { _, _ in
                             settings.validateTimingSettings()
                         }
                     Text(String(format: "%.1f秒", settings.overlayFadeOutDelay))
-                        .font(.system(.body, design: .rounded))
+                        .font(DesignTokens.Typography.value)
                         .fontWeight(.medium)
                         .foregroundStyle(.cyan)
-                        .frame(width: 50)
+                        .frame(width: DesignTokens.Layout.valueDisplayWidth, alignment: .trailing)
                 }
             }
             
-            HStack {
-                Image(systemName: "info.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.cyan.opacity(0.6))
-                Text("停留后多久开始变淡，最大为停留时间-变淡持续时间")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.leading, 24)
-            .padding(.top, -8)
+            InfoHint("停留后多久开始变淡，最大为停留时间-变淡持续时间", color: .cyan)
         }
     }
     
     private var fadeOutDurationSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             SettingRow(icon: "clock.badge.checkmark.fill", iconColor: .green, title: "变淡持续") {
                 let maxFadeOutDuration = max(0.5, settings.overlayStayDuration - settings.overlayFadeOutDelay)
-                HStack(spacing: 8) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
                     Slider(value: $settings.overlayFadeOutDuration, in: 0.5...maxFadeOutDuration, step: 0.5)
                         .disabled(settings.isRunning)
-                        .frame(width: 120)
+                        .frame(width: DesignTokens.Layout.sliderWidth)
                         .onChange(of: settings.overlayFadeOutDuration) { _, _ in
                             settings.validateTimingSettings()
                         }
                     Text(String(format: "%.1f秒", settings.overlayFadeOutDuration))
-                        .font(.system(.body, design: .rounded))
+                        .font(DesignTokens.Typography.value)
                         .fontWeight(.medium)
                         .foregroundStyle(.green)
-                        .frame(width: 50)
+                        .frame(width: DesignTokens.Layout.valueDisplayWidth, alignment: .trailing)
                 }
             }
             
-            HStack {
-                Image(systemName: "info.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.green.opacity(0.6))
-                Text("变淡动画持续时间，最大为停留时间-变淡延迟")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.leading, 24)
-            .padding(.top, -8)
+            InfoHint("变淡动画持续时间，最大为停留时间-变淡延迟", color: .green)
         }
     }
 }

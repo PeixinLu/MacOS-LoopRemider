@@ -17,12 +17,12 @@ struct PreviewSectionView: View {
     @Binding var isResting: Bool
 
     var body: some View {
-        VStack(alignment: .center, spacing: 16) {
+        VStack(alignment: .center, spacing: DesignTokens.Spacing.lg) {
             // 预览区域
             previewArea
             
             Divider()
-                .padding(.vertical, 8)
+                .padding(.vertical, DesignTokens.Spacing.sm)
             
             // 启动/暂停控制
             controlSection
@@ -37,8 +37,8 @@ struct PreviewSectionView: View {
     // MARK: - Preview Area
     
     private var previewArea: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: "eye.fill")
                     .foregroundStyle(.blue)
                 Text("实时预览")
@@ -103,7 +103,7 @@ struct PreviewSectionView: View {
                         .padding(8) // 确保通知在边框内
                     )
             }
-            .frame(width: 400, height: 250) // 16:10 屏幕比例
+            .frame(width: 380, height: 240)
             
             Text("实际显示效果可能因系统设置而略有不同")
                 .font(.caption2)
@@ -114,10 +114,10 @@ struct PreviewSectionView: View {
     // MARK: - Control Section
     
     private var controlSection: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
+        VStack(spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: DesignTokens.Spacing.lg) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                    HStack(spacing: DesignTokens.Spacing.sm) {
                         Image(systemName: settings.isRunning ? "play.circle.fill" : "pause.circle.fill")
                             .font(.title3)
                             .foregroundStyle(settings.isRunning ? (isResting ? .purple : .green) : .orange)
@@ -129,7 +129,7 @@ struct PreviewSectionView: View {
                     Text(settings.isRunning ? countdownText : "点击启动开始提醒")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .monospacedDigit() // 等宽数字，避免跳动
+                        .monospacedDigit()
                 }
                 
                 Spacer()
@@ -137,7 +137,6 @@ struct PreviewSectionView: View {
                 Toggle("", isOn: Binding(
                     get: { settings.isRunning },
                     set: { newValue in
-                        // 验证内容
                         if newValue && !settings.isContentValid() {
                             return
                         }
@@ -145,10 +144,8 @@ struct PreviewSectionView: View {
                         settings.isRunning = newValue
                         if newValue {
                             controller.start(settings: settings)
-                            // 启动时先将进度条归零，然后立即更新
                             progressValue = 0.0
                             countdownText = ""
-                            // 稍微延迟一下，确保 lastFireDate 已更新
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                 updateCountdown()
                             }
@@ -163,17 +160,17 @@ struct PreviewSectionView: View {
                 .labelsHidden()
                 .disabled(!settings.isContentValid())
             }
-            .padding(12)
+            .padding(DesignTokens.Spacing.md)
             .background(
                 ZStack(alignment: .leading) {
                     // 背景色
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
                         .fill(settings.isRunning ? (isResting ? Color.purple.opacity(0.1) : Color.green.opacity(0.1)) : Color.orange.opacity(0.1))
                     
-                    // 进度条（仅运行时显示）
+                    // 进度条
                     if settings.isRunning {
                         GeometryReader { geometry in
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
                                 .fill(
                                     LinearGradient(
                                         colors: [
@@ -185,19 +182,19 @@ struct PreviewSectionView: View {
                                     )
                                 )
                                 .frame(width: geometry.size.width * progressValue)
-                                .animation(.linear(duration: 0.3), value: progressValue) // 平滑过渡
+                                .animation(.linear(duration: 0.3), value: progressValue)
                         }
                     }
                     
                     // 边框
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
                         .strokeBorder(settings.isRunning ? (isResting ? Color.purple.opacity(0.3) : Color.green.opacity(0.3)) : Color.orange.opacity(0.3), lineWidth: 1)
                 }
             )
             
             // 验证提示
             if !settings.isContentValid() {
-                HStack(spacing: 8) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                     Text("标题、描述和Emoji至少需要有一项不为空")
@@ -205,17 +202,16 @@ struct PreviewSectionView: View {
                         .foregroundStyle(.red)
                     Spacer()
                 }
-                .padding(.horizontal, 8)
+                .padding(.horizontal, DesignTokens.Spacing.sm)
             }
         }
-        .frame(width: 420)
+        .frame(width: 380)
     }
     
     // MARK: - Test Button
     
     private var testButton: some View {
         Button {
-            // 验证内容
             guard settings.isContentValid() else {
                 return
             }
@@ -227,7 +223,7 @@ struct PreviewSectionView: View {
                 sendingTest = false
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 if sendingTest {
                     ProgressView()
                         .controlSize(.small)
@@ -239,12 +235,12 @@ struct PreviewSectionView: View {
                     .font(.callout)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, DesignTokens.Spacing.md)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
-        .disabled(sendingTest || settings.isRunning || !settings.isContentValid()) // 运行时或内容无效时禁用测试按钮
-        .frame(width: 420)
+        .disabled(sendingTest || settings.isRunning || !settings.isContentValid())
+        .frame(width: 380)
     }
     
     // MARK: - Helper Methods

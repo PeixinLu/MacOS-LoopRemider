@@ -12,10 +12,23 @@ struct AboutView: View {
     @State private var isLoading = true
     
     var body: some View {
-        Group {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+            // 页面标题
+            PageHeader(
+                icon: "info.circle.fill",
+                iconColor: .blue,
+                title: "关于",
+                subtitle: "了解更多应用信息"
+            )
+            
             if isLoading {
-                ProgressView("加载中...")
-                    .frame(maxHeight: .infinity)
+                Spacer()
+                HStack {
+                    Spacer()
+                    ProgressView("加载中...")
+                    Spacer()
+                }
+                Spacer()
             } else {
                 ScrollView {
                     Text(markdownContent)
@@ -23,8 +36,8 @@ struct AboutView: View {
                         .lineSpacing(6)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.horizontal, 40)
-                        .padding(.vertical, 20)
+                        .padding(.horizontal, DesignTokens.Spacing.xxxl)
+                        .padding(.vertical, DesignTokens.Spacing.xl)
                 }
                 .background(Color.clear)
             }

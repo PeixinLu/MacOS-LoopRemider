@@ -52,13 +52,13 @@ struct SettingsView: View {
                 Label(category.rawValue, systemImage: category.icon)
                     .tag(category)
             }
-            .navigationSplitViewColumnWidth(min: 140, ideal: 160, max: 180)
+            .navigationSplitViewColumnWidth(160)
             .listStyle(.sidebar)
-            .toolbar(removing: .sidebarToggle) // 隐藏折叠按钮
+            .toolbar(removing: .sidebarToggle)
         } detail: {
             // 右侧内容区 - 水平布局
-            HStack(alignment: .top, spacing: 24) {
-                // 左侧：表单区域（可滚动）
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.xxl) {
+                // 左侧：表单区域
                 ScrollView {
                     Group {
                         switch selectedCategory {
@@ -79,36 +79,34 @@ struct SettingsView: View {
                             AboutView()
                         }
                     }
-                    .padding(24)
+                    .padding(DesignTokens.Spacing.xxl)
                 }
-                .frame(width: (selectedCategory == .about || selectedCategory == .update || selectedCategory == .logs) ? nil : 500)
-                .frame(maxWidth: (selectedCategory == .about || selectedCategory == .update || selectedCategory == .logs) ? .infinity : nil)
+                .frame(width: shouldShowPreview ? 480 : nil)
+                .frame(maxWidth: shouldShowPreview ? nil : .infinity)
                 
-                // 右侧：预览区域（仅在非关于页和检查更新页显示）
-                if selectedCategory != .about && selectedCategory != .update && selectedCategory != .logs {
+                // 右侧：预览区域
+                if shouldShowPreview {
                     PreviewSectionView(
                         sendingTest: $sendingTest,
                         countdownText: $countdownText,
                         progressValue: $progressValue,
                         isResting: $isResting
                     )
-                    .frame(width: 450)
-                    .padding(.top, 24)
-                    .padding(.trailing, 24)
+                    .frame(width: 400)
+                    .padding(.top, DesignTokens.Spacing.xxl)
+                    .padding(.trailing, DesignTokens.Spacing.xxl)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: 1200, height: 700)
+        .frame(width: 1080, height: 680)
         .onAppear {
             initializeInputValue()
-            // 如果已在运行，立即更新倒计时
             if settings.isRunning {
                 updateCountdown()
             }
         }
         .onReceive(timer) { _ in
-            // 每秒更新倒计时
             if settings.isRunning {
                 updateCountdown()
             }
@@ -116,6 +114,13 @@ struct SettingsView: View {
         .onReceive(controller.$isResting) { resting in
             self.isResting = resting
         }
+    }
+    
+    // MARK: - Computed Properties
+    
+    /// 是否显示预览区域
+    private var shouldShowPreview: Bool {
+        selectedCategory != .about && selectedCategory != .update && selectedCategory != .logs
     }
     
     // MARK: - Helper Methods
@@ -191,4 +196,15 @@ struct SettingsView: View {
             }
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview {
+    let settings = AppSettings()
+    let controller = ReminderController()
+    return SettingsView()
+        .environmentObject(settings)
+        .environmentObject(controller)
+        .frame(width: 1200, height: 700)
 }
