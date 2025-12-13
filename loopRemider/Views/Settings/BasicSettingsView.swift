@@ -16,6 +16,7 @@ struct BasicSettingsView: View {
 
     @State private var restInputValue: String = ""
     @State private var restSelectedUnit: TimeUnit = .minutes
+    @FocusState private var isEmojiFieldFocused: Bool
 
     enum TimeUnit: String, CaseIterable {
         case seconds = "秒"
@@ -90,12 +91,18 @@ struct BasicSettingsView: View {
                             .textFieldStyle(.roundedBorder)
                             .disabled(settings.isRunning)
                             .padding(.trailing, 32)
+                            .focused($isEmojiFieldFocused)
                         
                         Button {
-                            // 清除其他输入框的聚焦
-                            NSApp.keyWindow?.makeFirstResponder(nil)
-                            // 延迟一点打开表情面板，以便在 emoji 输入框上显示
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            // 先激活输入框
+                            isEmojiFieldFocused = true
+                            // 使用较长延迟确保焦点已完全切换
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                // 再次确保焦点在输入框上
+                                if !isEmojiFieldFocused {
+                                    isEmojiFieldFocused = true
+                                }
+                                // 打开表情面板
                                 NSApp.orderFrontCharacterPalette(nil)
                             }
                         } label: {
