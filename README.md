@@ -1,12 +1,16 @@
-<div align="center">
-  <img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="100" />
-  
-  # Loop Reminder
-  
-  一款简洁优雅的 macOS 循环提醒工具，帮助你保持健康的工作习惯。
-  
-  [中文](README.md) | [English](README.en.md)
-</div>
+<h1 align="center">
+  <br>
+  <img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="100" alt="Loop Reminder">
+  <br>
+  Loop Reminder
+  <br>
+</h1>
+
+<h4 align="center">一款简洁优雅的 macOS 循环提醒工具，帮助你保持健康的工作习惯。</h4>
+
+<p align="center">
+  <a href="README.md">中文</a> | <a href="README.en.md">English</a>
+</p>
 
 ## 📦 下载
 
@@ -24,22 +28,17 @@
 
 ## 📸 预览
 
-<div align="center">
-  <img src="Assets/preview-notice.gif" width="500" />
-  
-  **通知效果**
-</div>
+<p align="center">
+  <img src="Assets/preview-notice.gif" width="500" alt="通知效果">
+</p>
+<p align="center"><em>通知效果</em></p>
 
-<table>
-  <tr>
-    <td align="center"><img src="Assets/preview-setting-basic.png" width="280" /></td>
-    <td align="center"><img src="Assets/preview-setting-style.png" width="280" /></td>
-    <td align="center"><img src="Assets/preview-setting-animation.png" width="280" /></td>
-  </tr>
-  <tr>
-    <td colspan="3" align="center"><b>配置项</b></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="Assets/preview-setting-basic.png" width="280" alt="基础设置">
+  <img src="Assets/preview-setting-style.png" width="280" alt="样式设置">
+  <img src="Assets/preview-setting-animation.png" width="280" alt="动画设置">
+</p>
+<p align="center"><strong>配置项</strong></p>
 
 ## 🎯 使用
 

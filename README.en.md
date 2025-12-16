@@ -1,12 +1,16 @@
-<div align="center">
-  <img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="100" />
-  
-  # Loop Reminder
-  
-  A sleek and elegant macOS loop reminder app to help you maintain healthy work habits.
-  
-  [English](README.en.md) | [中文](README.md)
-</div>
+<h1 align="center">
+  <br>
+  <img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="100" alt="Loop Reminder">
+  <br>
+  Loop Reminder
+  <br>
+</h1>
+
+<h4 align="center">A sleek and elegant macOS loop reminder app to help you maintain healthy work habits.</h4>
+
+<p align="center">
+  <a href="README.en.md">English</a> | <a href="README.md">中文</a>
+</p>
 
 ## 📦 Download
 
@@ -24,22 +28,17 @@
 
 ## 📸 Preview
 
-<div align="center">
-  <img src="Assets/preview-notice.gif" width="500" />
-  
-  **Notification Preview**
-</div>
+<p align="center">
+  <img src="Assets/preview-notice.gif" width="500" alt="Notification Preview">
+</p>
+<p align="center"><em>Notification Preview</em></p>
 
-<table>
-  <tr>
-    <td align="center"><img src="Assets/preview-setting-basic.png" width="280" /></td>
-    <td align="center"><img src="Assets/preview-setting-style.png" width="280" /></td>
-    <td align="center"><img src="Assets/preview-setting-animation.png" width="280" /></td>
-  </tr>
-  <tr>
-    <td colspan="3" align="center"><b>Configuration Options</b></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="Assets/preview-setting-basic.png" width="280" alt="Basic Settings">
+  <img src="Assets/preview-setting-style.png" width="280" alt="Style Settings">
+  <img src="Assets/preview-setting-animation.png" width="280" alt="Animation Settings">
+</p>
+<p align="center"><strong>Configuration Options</strong></p>
 
 ## 🎯 Usage
 
