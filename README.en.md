@@ -1,9 +1,12 @@
-<img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" style="width:100px; margin: 0 calc(50% - 50px)" />
-
-<h3 style="text-align: center">Loop Reminder</h3>
-
-<p style="text-align: center">A sleek and elegant macOS loop reminder app to help you maintain healthy work habits.</p>
-<p style="text-align: center">English｜<a href="README.md">中文</a></p>
+<div align="center">
+  <img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="100" />
+  
+  # Loop Reminder
+  
+  A sleek and elegant macOS loop reminder app to help you maintain healthy work habits.
+  
+  [English](README.en.md) | [中文](README.md)
+</div>
 
 ## 📦 Download
 
@@ -21,33 +24,40 @@
 
 ## 📸 Preview
 
-![](Assets/preview-notice.gif)
-<p style="text-align: center">Notification Preview</p>
-
-<div style="display: flex; justify-content: space-between;">
-    <img src="Assets/preview-setting-basic.png" style="width: calc(33% - 10px)" />
-    <img src="Assets/preview-setting-style.png" style="width: calc(33% - 10px)" />
-    <img src="Assets/preview-setting-animation.png" style="width: calc(33% - 10px)" />
+<div align="center">
+  <img src="Assets/preview-notice.gif" width="500" />
+  
+  **Notification Preview**
 </div>
-<p style="text-align: center">Configuration Options</p>
+
+<table>
+  <tr>
+    <td align="center"><img src="Assets/preview-setting-basic.png" width="280" /></td>
+    <td align="center"><img src="Assets/preview-setting-style.png" width="280" /></td>
+    <td align="center"><img src="Assets/preview-setting-animation.png" width="280" /></td>
+  </tr>
+  <tr>
+    <td colspan="3" align="center"><b>Configuration Options</b></td>
+  </tr>
+</table>
 
 ## 🎯 Usage
 
 1. [Download the latest version](https://github.com/PeixinLu/MacOS-LoopRemider/releases) and install
-
-<img src="Assets/installer.png" style="width: 200px; margin-left: 16px" />
+   
+   ![](Assets/installer.png)
 
 2. Click the "bell" icon in the menu bar to open settings
-
-<img src="Assets/menu-icon.png" style="width: 200px; margin-left: 32px" />
+   
+   ![](Assets/menu-icon.png)
 
 3. Configure reminder content, frequency, style, and animation effects
-
-<img src="Assets/preview-setting-basic.png" style="width: 300px; margin-left: 32px" />
+   
+   ![](Assets/preview-setting-basic.png)
 
 4. Click "Start" to begin loop reminders
-
-<img src="Assets/preview-notice.gif" style="width: 300px; margin-left: 32px" />
+   
+   ![](Assets/preview-notice.gif)
 
 ## 🔧 System Requirements
 

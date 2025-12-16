@@ -1,9 +1,12 @@
-<img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" style="width:100px; margin: 0 calc(50% - 50px)" />
-
-<h3 style="text-align: center">Loop Reminder</h3>
-
-<p style="text-align: center">一款简洁优雅的 macOS 循环提醒工具，帮助你保持健康的工作习惯。</p>
-<p style="text-align: center">中文｜<a href="README.en.md">English</a></p>
+<div align="center">
+  <img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="100" />
+  
+  # Loop Reminder
+  
+  一款简洁优雅的 macOS 循环提醒工具，帮助你保持健康的工作习惯。
+  
+  [中文](README.md) | [English](README.en.md)
+</div>
 
 ## 📦 下载
 
@@ -21,34 +24,40 @@
 
 ## 📸 预览
 
-![](Assets/preview-notice.gif)
-<p style="text-align: center">通知效果</p>
-
-<div style="display: flex; justify-content: space-between;">
-    <img src="Assets/preview-setting-basic.png" style="width: calc(33% - 10px)" />
-    <img src="Assets/preview-setting-style.png" style="width: calc(33% - 10px)" />
-    <img src="Assets/preview-setting-animation.png" style="width: calc(33% - 10px)" />
+<div align="center">
+  <img src="Assets/preview-notice.gif" width="500" />
+  
+  **通知效果**
 </div>
-<p style="text-align: center">配置项</p>
+
+<table>
+  <tr>
+    <td align="center"><img src="Assets/preview-setting-basic.png" width="280" /></td>
+    <td align="center"><img src="Assets/preview-setting-style.png" width="280" /></td>
+    <td align="center"><img src="Assets/preview-setting-animation.png" width="280" /></td>
+  </tr>
+  <tr>
+    <td colspan="3" align="center"><b>配置项</b></td>
+  </tr>
+</table>
 
 ## 🎯 使用
 
-
 1. [下载最新版本](https://github.com/PeixinLu/MacOS-LoopRemider/releases)并安装
+   
+   ![](Assets/installer.png)
 
-<img src="Assets/installer.png" style="width: 200px; margin-left: 16px" />
+2. 点击菜单栏"铃铛"图标打开设置
+   
+   ![](Assets/menu-icon.png)
 
-2. 点击菜单栏“铃铛”图标打开设置
+3. 配置提醒内容、频率和样式、动画效果
+   
+   ![](Assets/preview-setting-basic.png)
 
-<img src="Assets/menu-icon.png" style="width: 200px; margin-left: 32px" />
-
-2. 配置提醒内容、频率和样式、动画效果
-
-<img src="Assets/preview-setting-basic.png" style="width: 300px; margin-left: 32px" />
-
-3. 点击"启动"开始循环提醒
-
-<img src="Assets/preview-notice.gif" style="width: 300px; margin-left: 32px" />
+4. 点击"启动"开始循环提醒
+   
+   ![](Assets/preview-notice.gif)
 
 ## 🔧 系统要求
 
