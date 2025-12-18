@@ -300,7 +300,6 @@ final class AppSettings: ObservableObject {
         } else {
             // 默认创建一个计时器，使用旧的配置迁移过来
             let defaultTimer = TimerItem(
-                name: "默认计时器",
                 emoji: defaults.string(forKey: Keys.notifEmoji) ?? config.notification.emoji,
                 title: defaults.string(forKey: Keys.notifTitle) ?? config.notification.title,
                 body: defaults.string(forKey: Keys.notifBody) ?? config.notification.body,

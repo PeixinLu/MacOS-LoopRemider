@@ -16,7 +16,6 @@ struct TimerManagementView: View {
     @FocusState private var focusedField: FocusedField?
     
     enum FocusedField: Hashable {
-        case timerName(UUID)
         case timerEmoji(UUID)
         case timerTitle(UUID)
         case timerBody(UUID)
@@ -96,19 +95,19 @@ struct TimerManagementView: View {
                 Text("添加新计时器")
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, DesignTokens.Spacing.md)
+            .padding(.vertical, DesignTokens.Spacing.xs)
         }
-        .buttonStyle(.borderedProminent)
+        // .buttonStyle(.borderedProminent)
         .controlSize(.large)
     }
     
     // MARK: - Helper Methods
     
     private func addNewTimer() {
+        let timerNumber = settings.timers.count + 1
         let newTimer = TimerItem(
-            name: "计时器 \(settings.timers.count + 1)",
             emoji: "🔔",
-            title: "提醒",
+            title: "计时器 \(timerNumber)",
             body: "起来活动一下"
         )
         settings.timers.append(newTimer)
@@ -165,6 +164,7 @@ struct TimerItemCard: View {
     @State private var customColor: Color = .gray
     @State private var countdownText: String = ""
     @State private var progressValue: Double = 0.0
+    @State private var timerID: UUID = UUID() // 保存计时器ID，避免访问已删除的timer对象
     
     private let timer2 = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
@@ -200,6 +200,7 @@ struct TimerItemCard: View {
                 .strokeBorder(isFocused ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 2)
         )
         .onAppear {
+            timerID = timer.id // 初始化时保存ID
             initializeInputValues()
             initializeColorSelection()
         }
@@ -215,7 +216,7 @@ struct TimerItemCard: View {
                     Text(timer.emoji)
                         .font(.title2)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(timer.name)
+                        Text(timer.displayName)
                             .font(.headline)
                         // 显示关键信息：频率和内容
                         HStack(spacing: 4) {
@@ -314,6 +315,10 @@ struct TimerItemCard: View {
             }
         }
         .onReceive(timer2) { _ in
+            // 检查计时器是否仍然存在于数组中（防止删除后仍触发更新导致崩溃）
+            guard settings.timers.contains(where: { $0.id == timerID }) else {
+                return
+            }
             if isTimerRunning {
                 updateCountdown()
             }
@@ -341,14 +346,6 @@ struct TimerItemCard: View {
                     .font(DesignTokens.Typography.sectionTitle)
                     .foregroundStyle(.secondary)
                 
-                // 计时器名称
-                SettingRow(icon: "tag.fill", iconColor: .blue, title: "名称") {
-                    TextField("计时器名称", text: $timer.name)
-                        .textFieldStyle(.roundedBorder)
-                        .disabled(settings.isRunning)
-                        .focused(focusedField, equals: .timerName(timer.id))
-                }
-                
                 // 通知内容
                 SettingRow(icon: "face.smiling", iconColor: .green, title: "图标") {
                     TextField("Emoji", text: $timer.emoji)
@@ -358,7 +355,7 @@ struct TimerItemCard: View {
                 }
                 
                 SettingRow(icon: "textformat", iconColor: .green, title: "标题") {
-                    TextField("通知标题", text: $timer.title)
+                    TextField("通知标题（也作为计时器名称）", text: $timer.title)
                         .textFieldStyle(.roundedBorder)
                         .disabled(settings.isRunning)
                         .focused(focusedField, equals: .timerTitle(timer.id))

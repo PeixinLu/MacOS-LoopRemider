@@ -157,7 +157,7 @@ final class ReminderController: ObservableObject {
             settings.timers[index].isRunning = true
         }
         
-        logger.log("启动计时器: \(timer.name)")
+        logger.log("启动计时器: \(timer.displayName)")
     }
     
     // 停止单个计时器
@@ -181,7 +181,7 @@ final class ReminderController: ObservableObject {
             settings.timers[index].isRunning = false
         }
         
-        if let timerName = settings.timers.first(where: { $0.id == timerID })?.name {
+        if let timerName = settings.timers.first(where: { $0.id == timerID })?.displayName {
             logger.log("停止计时器: \(timerName)")
         }
     }

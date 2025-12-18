@@ -8,12 +8,11 @@
 import SwiftUI
 import Foundation
 
-/// 计时器项目模型
+// 计时器项目模型
 struct TimerItem: Identifiable, Codable {
     var id: UUID
-    var name: String // 计时器名称
     var emoji: String // 图标
-    var title: String // 通知标题
+    var title: String // 通知标题（也作为计时器名称）
     var body: String // 通知内容
     var intervalSeconds: Double // 通知间隔（秒）
     var isRestEnabled: Bool // 是否启用休息
@@ -21,6 +20,12 @@ struct TimerItem: Identifiable, Codable {
     var customColor: TimerColor? // 自定义颜色（优先于全局样式）
     var lastFireEpoch: Double // 上次触发时间
     var isRunning: Bool = false // 是否正在运行（不持久化）
+    
+    // 计算属性：显示名称（使用标题，如果为空则用"计时器+数字"）
+    var displayName: String {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedTitle.isEmpty ? "计时器" : trimmedTitle
+    }
     
     /// 计时器颜色配置
     struct TimerColor: Codable, Equatable {
@@ -90,7 +95,6 @@ struct TimerItem: Identifiable, Codable {
     
     init(
         id: UUID = UUID(),
-        name: String = "计时器",
         emoji: String = "🔔",
         title: String = "提醒",
         body: String = "起来活动一下",
@@ -101,7 +105,6 @@ struct TimerItem: Identifiable, Codable {
         lastFireEpoch: Double = 0
     ) {
         self.id = id
-        self.name = name
         self.emoji = emoji
         self.title = title
         self.body = body
@@ -179,7 +182,7 @@ struct TimerItem: Identifiable, Codable {
     
     // Codable: 不序列化 isRunning 字段
     enum CodingKeys: String, CodingKey {
-        case id, name, emoji, title, body, intervalSeconds
+        case id, emoji, title, body, intervalSeconds
         case isRestEnabled, restSeconds, customColor, lastFireEpoch
     }
 }

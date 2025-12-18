@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct PreviewSectionView: View {
     @EnvironmentObject private var settings: AppSettings
@@ -275,70 +276,105 @@ struct TimerListItemView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var controller: ReminderController
     
+    @State private var countdownText: String = ""
+    @State private var progressValue: Double = 0.0
+    private let timer2 = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    
     var body: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
-            // 图标和名称
-            HStack(spacing: 6) {
-                Text(timer.emoji)
-                    .font(.body)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(timer.name)
-                        .font(.callout)
-                        .lineLimit(1)
-                    // 显示关键信息
-                    HStack(spacing: 4) {
-                        Text(timer.formattedInterval())
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text("•")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text(timer.title.isEmpty ? timer.body : timer.title)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+        VStack(spacing: 0) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                // 图标和名称
+                HStack(spacing: 6) {
+                    Text(timer.emoji)
+                        .font(.body)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(timer.displayName)
+                            .font(.callout)
                             .lineLimit(1)
+                        // 显示关键信息
+                        HStack(spacing: 4) {
+                            Text(timer.formattedInterval())
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text("•")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(timer.title.isEmpty ? timer.body : timer.title)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
-                }
-            }
-            
-            Spacer()
-            
-            // 休息和自定义颜色标记
-            HStack(spacing: DesignTokens.Spacing.xs) {
-                if timer.isRestEnabled {
-                    Image(systemName: "pause.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.purple)
-                        .help("休息 \(timer.formattedRestInterval())")
                 }
                 
-                if timer.customColor != nil {
-                    Circle()
-                        .fill(timer.customColor?.toColor() ?? .gray)
-                        .frame(width: 8, height: 8)
-                        .help("自定义颜色")
+                Spacer()
+                
+                // 休息和自定义颜色标记
+                HStack(spacing: DesignTokens.Spacing.xs) {
+                    if timer.isRestEnabled {
+                        Image(systemName: "pause.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.purple)
+                            .help("休息 \(timer.formattedRestInterval())")
+                    }
+                    
+                    if timer.customColor != nil {
+                        Circle()
+                            .fill(timer.customColor?.toColor() ?? .gray)
+                            .frame(width: 8, height: 8)
+                            .help("自定义颜色")
+                    }
+                }
+                
+                // 启动/停止按钮
+                if timer.isContentValid() {
+                    Button {
+                        if timer.isRunning {
+                            controller.stopTimer(timer.id, settings: settings)
+                        } else {
+                            controller.startTimer(timer.id, settings: settings)
+                        }
+                    } label: {
+                        Image(systemName: timer.isRunning ? "pause.circle.fill" : "play.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(timer.isRunning ? .orange : .green)
+                    }
+                    .buttonStyle(.plain)
+                    .help(timer.isRunning ? "暂停计时器" : "启动计时器")
                 }
             }
+            .padding(.horizontal, DesignTokens.Spacing.sm)
+            .padding(.vertical, DesignTokens.Spacing.xs)
             
-            // 启动/停止按钮
-            if timer.isContentValid() {
-                Button {
-                    if timer.isRunning {
-                        controller.stopTimer(timer.id, settings: settings)
-                    } else {
-                        controller.startTimer(timer.id, settings: settings)
+            // 进度条
+            if timer.isRunning {
+                VStack(spacing: 4) {
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color.green.opacity(0.15))
+                            .frame(height: 3)
+                        
+                        Rectangle()
+                            .fill(Color.green)
+                            .frame(width: progressWidth, height: 3)
+                            .animation(.linear(duration: 0.3), value: progressValue)
                     }
-                } label: {
-                    Image(systemName: timer.isRunning ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(timer.isRunning ? .orange : .green)
+                    .padding(.horizontal, DesignTokens.Spacing.sm)
+                    
+                    if !countdownText.isEmpty {
+                        HStack {
+                            Text(countdownText)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                            Spacer()
+                        }
+                        .padding(.horizontal, DesignTokens.Spacing.sm)
+                        .padding(.bottom, DesignTokens.Spacing.xs)
+                    }
                 }
-                .buttonStyle(.plain)
-                .help(timer.isRunning ? "暂停计时器" : "启动计时器")
             }
         }
-        .padding(.horizontal, DesignTokens.Spacing.sm)
-        .padding(.vertical, DesignTokens.Spacing.xs)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
                 .fill(isFocused ? Color.blue.opacity(0.1) : Color.clear)
@@ -350,6 +386,51 @@ struct TimerListItemView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             onFocus()
+        }
+        .onReceive(timer2) { _ in
+            if timer.isRunning {
+                updateCountdown()
+            }
+        }
+    }
+    
+    private var progressWidth: CGFloat {
+        // 计算进度条宽度
+        return 356 * progressValue // 380 - 2*12 padding
+    }
+    
+    private func updateCountdown() {
+        guard timer.isRunning else {
+            countdownText = ""
+            progressValue = 0.0
+            return
+        }
+        
+        let now = Date()
+        let lastFire = timer.lastFireDate ?? now
+        let nextFire = lastFire.addingTimeInterval(timer.intervalSeconds)
+        let remaining = nextFire.timeIntervalSince(now)
+        
+        if remaining <= 1.0 {
+            countdownText = "下次通知：即将发送..."
+            progressValue = 1.0
+            return
+        }
+        
+        let elapsed = timer.intervalSeconds - remaining
+        progressValue = max(0, min(1.0, elapsed / timer.intervalSeconds))
+        
+        let seconds = Int(remaining)
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let secs = seconds % 60
+        
+        if hours > 0 {
+            countdownText = String(format: "下次通知：%d:%02d:%02d", hours, minutes, secs)
+        } else if minutes > 0 {
+            countdownText = String(format: "下次通知：%d:%02d", minutes, secs)
+        } else {
+            countdownText = String(format: "下次通知：%d秒", secs)
         }
     }
 }
