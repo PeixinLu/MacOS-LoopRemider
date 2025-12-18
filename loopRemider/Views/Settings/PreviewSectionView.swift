@@ -1,10 +1,3 @@
-//
-//  PreviewSectionView.swift
-//  loopRemider
-//
-//  Created by 数源 on 2025/12/8.
-//
-
 import SwiftUI
 import Combine
 

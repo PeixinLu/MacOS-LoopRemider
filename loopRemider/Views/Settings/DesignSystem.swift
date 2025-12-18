@@ -1,9 +1,4 @@
-//
-//  DesignSystem.swift
-//  loopRemider
-//
 //  统一设计系统 - 管理所有设计常量和可复用组件
-//
 
 import SwiftUI
 

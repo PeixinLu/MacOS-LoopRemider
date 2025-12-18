@@ -1,10 +1,3 @@
-//
-//  TimerItem.swift
-//  loopRemider
-//
-//  Timer item model for managing multiple timers
-//
-
 import SwiftUI
 import Foundation
 

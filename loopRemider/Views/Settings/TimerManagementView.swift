@@ -314,7 +314,7 @@ struct TimerItemCard: View {
                 }
             }
         }
-        .onReceive(timer2) { _ in
+    .onReceive(timer2) { _ in
             // 检查计时器是否仍然存在于数组中（防止删除后仍触发更新导致崩溃）
             guard settings.timers.contains(where: { $0.id == timerID }) else {
                 return
