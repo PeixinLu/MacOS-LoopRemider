@@ -54,10 +54,16 @@ struct OverlayNotificationView: View {
                         Spacer()
                     }
                 } else {
-                    // 标准布局：emoji在左，文字在右
+                    // 标准布局：emoji/图标在左，文字在右
                     HStack(spacing: contentSpacing) {
-                        // 只在emoji不为空时显示
-                        if !trimmedEmoji.isEmpty {
+                        // 如果emoji为空且标题不为空，显示扁平铃铛图标（启动通知）
+                        if trimmedEmoji.isEmpty && !trimmedTitle.isEmpty {
+                            Image(systemName: "bell.fill")
+                                .font(.system(size: iconSize))
+                                .foregroundColor(textColor ?? .white)
+                                .shadow(color: needsTextShadow ? .black.opacity(0.3) : .clear, radius: 2, x: 0, y: 1)
+                        } else if !trimmedEmoji.isEmpty {
+                            // 显示emoji
                             Text(trimmedEmoji)
                                 .font(.system(size: iconSize))
                                 .shadow(color: needsTextShadow ? .black.opacity(0.3) : .clear, radius: 2, x: 0, y: 1)

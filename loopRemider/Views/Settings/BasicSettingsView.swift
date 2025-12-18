@@ -29,10 +29,10 @@ struct BasicSettingsView: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             // 页面标题 - 固定
             PageHeader(
-                icon: "bell.badge.fill",
+                icon: "gear.fill",
                 iconColor: .blue,
-                title: "提醒设置",
-                subtitle: "自定义您的循环提醒"
+                title: "基本设置",
+                subtitle: "配置一些启动项"
             )
 
             // 内容区域 - 可滚动

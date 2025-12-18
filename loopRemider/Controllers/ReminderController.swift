@@ -95,7 +95,7 @@ final class ReminderController: ObservableObject {
 
         // 启动时弹出一次通知（固定样式），不影响计时进度
         Task {
-            await self.sendStartNotification(settings: settings)
+            await self.sendStartNotification(settings: settings, count: validTimers.count)
         }
     }
 
@@ -121,6 +121,7 @@ final class ReminderController: ObservableObject {
         }
         
         isResting = false
+        // 停止时关闭所有未关闭的通知弹窗
         closeOverlay()
         logger.log("计时器已停止")
     }
@@ -151,6 +152,11 @@ final class ReminderController: ObservableObject {
         }
         
         logger.log("启动计时器: \(timer.displayName)")
+        
+        // 启动单个计时器时也显示通知
+        Task {
+            await self.sendSingleTimerStartNotification(timerName: timer.displayName, settings: settings)
+        }
     }
     
     // 停止单个计时器
@@ -172,6 +178,24 @@ final class ReminderController: ObservableObject {
         // 标记为未运行
         if let index = settings.timers.firstIndex(where: { $0.id == timerID }) {
             settings.timers[index].isRunning = false
+        }
+        
+        // 关闭该计时器的通知弹窗（如果有）
+        if let window = overlayWindows[timerID] {
+            window.alphaValue = 0
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak window] in
+                window?.orderOut(nil)
+                window?.close()
+            }
+            overlayWindows.removeValue(forKey: timerID)
+            
+            // 从顺序中移除
+            if let index = notificationOrder.firstIndex(of: timerID) {
+                notificationOrder.remove(at: index)
+            }
+            
+            // 重新布局其他通知
+            relayoutNotifications(settings: settings)
         }
         
         if let timerName = settings.timers.first(where: { $0.id == timerID })?.displayName {
@@ -280,7 +304,7 @@ final class ReminderController: ObservableObject {
         guard let firstTimer = settings.timers.first else { return }
         
         let content = NotificationContent(
-            emoji: "🔔",
+            emoji: "", // 不使用 emoji，由视图层显示图标
             title: title,
             body: body
         )
@@ -296,19 +320,27 @@ final class ReminderController: ObservableObject {
         )
     }
     
-    private func sendStartNotification(settings: AppSettings) async {
+    private func sendStartNotification(settings: AppSettings, count: Int) async {
         await sendStartLikeNotification(
             settings: settings,
-            title: "计时器已启动",
-            body: "循环提醒已开始计时"
+            title: "已启动",
+            body: "\(count)个计时器"
+        )
+    }
+    
+    private func sendSingleTimerStartNotification(timerName: String, settings: AppSettings) async {
+        await sendStartLikeNotification(
+            settings: settings,
+            title: "已启动",
+            body: timerName
         )
     }
     
     private func sendResetNotification(settings: AppSettings) async {
         await sendStartLikeNotification(
             settings: settings,
-            title: "计时器已重置",
-            body: "已重新开始计时"
+            title: "已重置",
+            body: ""
         )
     }
     
@@ -355,19 +387,19 @@ final class ReminderController: ObservableObject {
         return OverlayStyle(
             backgroundColor: background,
             backgroundOpacity: opacity,
-            stayDuration: 2.8,
+            stayDuration: 1.5,
             enableFadeOut: false, // 启动提示不单独淡化内容，只做整体淡入淡出
             fadeOutDelay: 0,
-            fadeOutDuration: 0.35,
-            titleFontSize: 16,
-            bodyFontSize: 13,
-            iconSize: 22,
-            cornerRadius: 18,
-            contentSpacing: 12,
+            fadeOutDuration: 0.25,
+            titleFontSize: 14,
+            bodyFontSize: 12,
+            iconSize: 18,
+            cornerRadius: 12,
+            contentSpacing: 6,
             useBlur: true,
             blurIntensity: 0.5,
-            overlayWidth: 280,
-            overlayHeight: 96,
+            overlayWidth: 120,
+            overlayHeight: 60,
             animationStyle: .fade,
             position: settings.overlayPosition,
             padding: settings.overlayEdgePadding,

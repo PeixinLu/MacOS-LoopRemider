@@ -8,7 +8,7 @@ struct SettingsView: View {
     @State private var sendingTest = false
     @State private var inputValue: String = ""
     @State private var selectedUnit: BasicSettingsView.TimeUnit = .minutes
-    @State private var selectedCategory: SettingsCategory = .basic
+    @State private var selectedCategory: SettingsCategory = .timers
     @State private var countdownText: String = ""
     @State private var progressValue: Double = 0.0
     @State private var isResting: Bool = false
@@ -17,10 +17,10 @@ struct SettingsView: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     enum SettingsCategory: String, CaseIterable, Identifiable {
-        case basic = "基本设置"
         case timers = "计时器"
-        case style = "通知样式"
+        case style = "通用外观"
         case animation = "动画和定位"
+        case basic = "基本设置"
         case logs = "日志"
         case update = "检查更新"
         case about = "关于"
@@ -29,10 +29,10 @@ struct SettingsView: View {
         
         var icon: String {
             switch self {
-            case .basic: return "bell.badge.fill"
-            case .timers: return "timer.circle.fill"
-            case .style: return "paintbrush.pointed.fill"
+            case .timers: return "bell.badge.fill"
+            case .style: return "paintbrush.fill"
             case .animation: return "wand.and.stars"
+            case .basic: return "gear"
             case .logs: return "doc.text.magnifyingglass"
             case .update: return "arrow.down.circle"
             case .about: return "info.circle.fill"
@@ -50,6 +50,8 @@ struct SettingsView: View {
             .navigationSplitViewColumnWidth(160)
             .listStyle(.sidebar)
             .toolbar(removing: .sidebarToggle)
+            .frame(width: 160)
+            .fixedSize(horizontal: true, vertical: false)
         } detail: {
             // 右侧内容区 - 水平布局
             HStack(alignment: .top, spacing: DesignTokens.Spacing.xxl) {

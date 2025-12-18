@@ -58,28 +58,64 @@ struct loopRemiderApp: App {
         return Group {
         // 菜单栏
         MenuBarExtra {
-            Button(settings.isRunning ? "暂停" : "启动") {
-                if settings.isRunning {
+            // 检查是否有任何计时器在运行
+            let hasRunningTimer = settings.timers.contains(where: { $0.isRunning })
+            
+            Button(hasRunningTimer ? "全部停止" : "全部启动") {
+                if hasRunningTimer {
+                    // 停止所有正在运行的计时器
+                    for timer in settings.timers where timer.isRunning {
+                        controller.stopTimer(timer.id, settings: settings)
+                    }
                     settings.isRunning = false
-                    controller.stop()
                 } else {
+                    // 启动所有有效的计时器
                     settings.isRunning = true
                     controller.start(settings: settings)
                 }
             }
+            
+            Divider()
+            
+            // 各个计时器的启停开关
+            if !settings.timers.isEmpty {
+                Section("计时器") {
+                    ForEach(settings.timers) { timer in
+                        Toggle(isOn: Binding(
+                            get: { timer.isRunning },
+                            set: { isOn in
+                                if isOn {
+                                    controller.startTimer(timer.id, settings: settings)
+                                } else {
+                                    controller.stopTimer(timer.id, settings: settings)
+                                }
+                            }
+                        )) {
+                            Text(timer.displayName)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                        .disabled(!timer.isContentValid())
+                    }
+                }
+                
+                Divider()
+            }
 
-            Button("配置…") {
+            Button("设置中心") {
                 openSettingsWindow()
             }
             .keyboardShortcut(",", modifiers: .command)
 
             Divider()
 
-            Button("退出") {
+            Button("退出 LoopReminder") {
                 NSApp.terminate(nil)
             }
         } label: {
-            Image(systemName: settings.isRunning ? "bell.fill" : "bell")
+            // 只要有任何计时器在运行，就使用 fill 图标
+            let hasRunningTimer = settings.timers.contains(where: { $0.isRunning })
+            Image(systemName: hasRunningTimer ? "bell.fill" : "bell")
                 .font(.system(size: 14))
         }
         .menuBarExtraStyle(.menu)

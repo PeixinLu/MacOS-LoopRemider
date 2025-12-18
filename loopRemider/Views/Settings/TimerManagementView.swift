@@ -25,7 +25,7 @@ struct TimerManagementView: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             // 页面标题
             PageHeader(
-                icon: "timer.circle.fill",
+                icon: "bell.badge.fill",
                 iconColor: .blue,
                 title: "计时器管理",
                 subtitle: "管理您的循环提醒计时器"
@@ -348,10 +348,28 @@ struct TimerItemCard: View {
                 
                 // 通知内容
                 SettingRow(icon: "face.smiling", iconColor: .green, title: "图标") {
-                    TextField("Emoji", text: $timer.emoji)
-                        .textFieldStyle(.roundedBorder)
+                    HStack(spacing: 8) {
+                        TextField("", text: $timer.emoji)
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(settings.isRunning)
+                            .focused(focusedField, equals: .timerEmoji(timer.id))
+                            .frame(width: 60)
+                        
+                        Button {
+                            // 聚焦到emoji输入框，触发emoji选择器
+                            focusedField.wrappedValue = .timerEmoji(timer.id)
+                            // 延迟一下再触发，确保聚焦已生效
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                NSApp.orderFrontCharacterPalette(nil)
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "face.smiling")
+                                Text("选择 Emoji")
+                            }
+                        }
                         .disabled(settings.isRunning)
-                        .focused(focusedField, equals: .timerEmoji(timer.id))
+                    }
                 }
                 
                 SettingRow(icon: "textformat", iconColor: .green, title: "标题") {
@@ -380,6 +398,17 @@ struct TimerItemCard: View {
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 80)
                         .disabled(settings.isRunning)
+                        .onSubmit {
+                            // 按 Return 键时校验
+                            validateAndUpdateInterval()
+                        }
+                        .onChange(of: intervalInputValue) { _, newValue in
+                            // 实时验证输入是否为数字
+                            let filtered = newValue.filter { "0123456789.".contains($0) }
+                            if filtered != newValue {
+                                intervalInputValue = filtered
+                            }
+                        }
                         
                         Picker("", selection: $intervalSelectedUnit) {
                             ForEach(TimeUnit.allCases, id: \.self) { unit in
@@ -423,6 +452,17 @@ struct TimerItemCard: View {
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 80)
                             .disabled(settings.isRunning)
+                            .onSubmit {
+                                // 按 Return 键时校验
+                                validateAndUpdateRestInterval()
+                            }
+                            .onChange(of: restInputValue) { _, newValue in
+                                // 实时验证输入是否为数字
+                                let filtered = newValue.filter { "0123456789.".contains($0) }
+                                if filtered != newValue {
+                                    restInputValue = filtered
+                                }
+                            }
                             
                             Picker("", selection: $restSelectedUnit) {
                                 ForEach(TimeUnit.allCases, id: \.self) { unit in

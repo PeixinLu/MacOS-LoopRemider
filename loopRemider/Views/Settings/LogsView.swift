@@ -41,7 +41,8 @@ struct LogsView: View {
                 }
                 .buttonStyle(.bordered)
             }
-            
+            .padding(.trailing, DesignTokens.Spacing.lg)
+
             // 日志内容 - 可滚动
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {

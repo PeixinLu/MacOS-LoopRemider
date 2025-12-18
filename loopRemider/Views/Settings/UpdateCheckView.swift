@@ -23,6 +23,7 @@ struct UpdateCheckView: View {
                     .buttonStyle(.borderedProminent)
                 }
             }
+            .padding(.trailing, DesignTokens.Spacing.lg)
             
             Divider()
             
