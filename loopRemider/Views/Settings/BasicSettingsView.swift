@@ -45,19 +45,10 @@ struct BasicSettingsView: View {
             // 内容区域 - 可滚动
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                    // 1. 通知内容
-                    notificationContentSection
-                    
-                    // 2. 通知频率
-                    notificationIntervalSection
-                    
-                    // 3. 休息一下
-                    restSection
-                    
-                    // 4. 启动设置
+                    // 1. 启动设置
                     launchSettingsSection
                     
-                    // 5. 通知方式
+                    // 2. 通知方式
                     notificationModeSection
                 }
                 .padding(.bottom, DesignTokens.Spacing.xl)

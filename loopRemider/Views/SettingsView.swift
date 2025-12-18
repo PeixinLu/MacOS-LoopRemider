@@ -25,6 +25,7 @@ struct SettingsView: View {
     
     enum SettingsCategory: String, CaseIterable, Identifiable {
         case basic = "基本设置"
+        case timers = "计时器"
         case style = "通知样式"
         case animation = "动画和定位"
         case logs = "日志"
@@ -36,6 +37,7 @@ struct SettingsView: View {
         var icon: String {
             switch self {
             case .basic: return "bell.badge.fill"
+            case .timers: return "timer.circle.fill"
             case .style: return "paintbrush.pointed.fill"
             case .animation: return "wand.and.stars"
             case .logs: return "doc.text.magnifyingglass"
@@ -66,6 +68,8 @@ struct SettingsView: View {
                             inputValue: $inputValue,
                             selectedUnit: $selectedUnit
                         )
+                    case .timers:
+                        TimerManagementView()
                     case .style:
                         StyleSettingsView()
                     case .animation:
@@ -88,7 +92,11 @@ struct SettingsView: View {
                         sendingTest: $sendingTest,
                         countdownText: $countdownText,
                         progressValue: $progressValue,
-                        isResting: $isResting
+                        isResting: $isResting,
+                        showTimerList: selectedCategory != .timers,
+                        onNavigateToTimers: {
+                            selectedCategory = .timers
+                        }
                     )
                     .frame(width: 400)
                     .padding(.top, DesignTokens.Spacing.xxl)
@@ -118,6 +126,7 @@ struct SettingsView: View {
     
     /// 是否显示预览区域
     private var shouldShowPreview: Bool {
+        // 在所有页面显示预览（除了关于、更新、日志页面）
         selectedCategory != .about && selectedCategory != .update && selectedCategory != .logs
     }
     

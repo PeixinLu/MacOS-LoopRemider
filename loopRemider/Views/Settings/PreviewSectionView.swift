@@ -15,8 +15,26 @@ struct PreviewSectionView: View {
     @Binding var countdownText: String
     @Binding var progressValue: Double
     @Binding var isResting: Bool
+    var showTimerList: Bool = false // 是否显示计时器列表
+    var onNavigateToTimers: (() -> Void)? = nil // 跳转到计时器页面
 
     var body: some View {
+        VStack(alignment: .center, spacing: DesignTokens.Spacing.lg) {
+            if showTimerList {
+                // 显示计时器列表
+                timerListView
+            } else {
+                // 显示单个计时器预览
+                singleTimerPreviewView
+            }
+            
+            Spacer()
+        }
+    }
+    
+    // MARK: - Single Timer Preview View
+    
+    private var singleTimerPreviewView: some View {
         VStack(alignment: .center, spacing: DesignTokens.Spacing.lg) {
             // 预览区域
             previewArea
@@ -24,14 +42,65 @@ struct PreviewSectionView: View {
             Divider()
                 .padding(.vertical, DesignTokens.Spacing.sm)
             
-            // 启动/暂停控制
-            controlSection
+            // 测试按钮
+            testButton
+        }
+    }
+    
+    // MARK: - Timer List View
+    
+    private var timerListView: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: "timer.circle.fill")
+                    .foregroundStyle(.blue)
+                Text("实时预览")
+                    .font(.headline)
+                Spacer()
+                Button {
+                    onNavigateToTimers?()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.caption)
+                        Text("计时器配置")
+                            .font(.caption)
+                    }
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.blue)
+            }
+            
+            // 预览区域
+            previewAreaForFocusedTimer
+            
+            Divider()
+                .padding(.vertical, DesignTokens.Spacing.sm)
+            
+            // 计时器列表
+            ScrollView {
+                VStack(spacing: DesignTokens.Spacing.sm) {
+                    ForEach(settings.timers) { timer in
+                        TimerListItemView(
+                            timer: timer,
+                            isFocused: settings.focusedTimerID == timer.id,
+                            isRunning: settings.isRunning,
+                            onToggle: {
+                                toggleTimer(timer)
+                            },
+                            onFocus: {
+                                settings.focusedTimerID = timer.id
+                            }
+                        )
+                    }
+                }
+            }
+            .frame(maxHeight: 150)
             
             // 测试按钮
             testButton
-            
-            Spacer()
         }
+        .frame(width: 380)
     }
     
     // MARK: - Preview Area
@@ -45,39 +114,60 @@ struct PreviewSectionView: View {
                     .font(.headline)
             }
             
-            // 预览容器 - 模拟屏幕外观
-            ZStack {
-                // 外层：黑色边框，模拟显示器外壳
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.black)
-                    .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
-                
-                // 内层：透明的屏幕区域（使用视觉效果实现真正的透明）
-                VisualEffectTransparentView()
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding(8) // 边框宽度
-                    .overlay(
-                        // 预览通知 - 固定在屏幕中央
-                        GeometryReader { geometry in
-                            let screenWidth = geometry.size.width - 16 // 减去边框
-                            let screenHeight = geometry.size.height - 16
+            previewNotificationContainer
+            
+            Text("实际显示效果可能因系统设置而略有不同")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+    
+    // MARK: - Preview Area For Focused Timer
+    
+    private var previewAreaForFocusedTimer: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+            previewNotificationContainer
+            
+            Text("预览当前焦点的计时器")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+    
+    // MARK: - Preview Notification Container
+    
+    private var previewNotificationContainer: some View {
+        ZStack {
+            // 外层：黑色边框，模拟显示器外壳
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.black)
+                .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
+            
+            // 内层：透明的屏幕区域（使用视觉效果实现真正的透明）
+            VisualEffectTransparentView()
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(8) // 边框宽度
+                .overlay(
+                    GeometryReader { geometry in
+                        let screenWidth = geometry.size.width - 16
+                        let screenHeight = geometry.size.height - 16
+                        
+                        if let focusedTimer = getFocusedTimer() {
                             let notifWidth = settings.overlayWidth
                             let notifHeight = settings.overlayHeight
                             
-                            // 计算缩放比例，确保通知不超出屏幕内边框
                             let widthScale = notifWidth > screenWidth ? screenWidth / notifWidth : 1.0
                             let heightScale = notifHeight > screenHeight ? screenHeight / notifHeight : 1.0
                             let scale = min(widthScale, heightScale, 1.0)
                             
-                            // NSPanel外边框容器
+                            let backgroundColor = focusedTimer.customColor?.toColor() ?? settings.getOverlayColor()
+                            
                             ZStack {
-                                // 此处不会添加颜色边框，因为NSPanel本身对应渲染
-                                // 仅展示实际通知内容
                                 OverlayNotificationView(
-                                    emoji: settings.notifEmoji,
-                                    title: settings.notifTitle,
-                                    message: settings.notifBody,
-                                    backgroundColor: settings.getOverlayColor(),
+                                    emoji: focusedTimer.emoji,
+                                    title: focusedTimer.title,
+                                    message: focusedTimer.body,
+                                    backgroundColor: backgroundColor,
                                     backgroundOpacity: settings.overlayOpacity,
                                     stayDuration: 999,
                                     enableFadeOut: false,
@@ -100,125 +190,24 @@ struct PreviewSectionView: View {
                                 )
                             }
                         }
-                        .padding(8) // 确保通知在边框内
-                    )
-            }
-            .frame(width: 380, height: 240)
-            
-            Text("实际显示效果可能因系统设置而略有不同")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                    }
+                    .padding(8)
+                )
         }
-    }
-    
-    // MARK: - Control Section
-    
-    private var controlSection: some View {
-        VStack(spacing: DesignTokens.Spacing.md) {
-            HStack(spacing: DesignTokens.Spacing.lg) {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
-                    HStack(spacing: DesignTokens.Spacing.sm) {
-                        Image(systemName: settings.isRunning ? "play.circle.fill" : "pause.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(settings.isRunning ? (isResting ? .purple : .green) : .orange)
-                        Text(settings.isRunning ? (isResting ? "休息中" : "运行中") : "已暂停")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(settings.isRunning ? (isResting ? .purple : .green) : .orange)
-                    }
-                    Text(settings.isRunning ? countdownText : "点击启动开始提醒")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-                
-                Spacer()
-                
-                Toggle("", isOn: Binding(
-                    get: { settings.isRunning },
-                    set: { newValue in
-                        if newValue && !settings.isContentValid() {
-                            return
-                        }
-                        
-                        settings.isRunning = newValue
-                        if newValue {
-                            controller.start(settings: settings)
-                            progressValue = 0.0
-                            countdownText = ""
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                updateCountdown()
-                            }
-                        } else {
-                            controller.stop()
-                            countdownText = ""
-                            progressValue = 0.0
-                        }
-                    }
-                ))
-                .toggleStyle(.switch)
-                .labelsHidden()
-                .disabled(!settings.isContentValid())
-            }
-            .padding(DesignTokens.Spacing.md)
-            .background(
-                ZStack(alignment: .leading) {
-                    // 背景色
-                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
-                        .fill(settings.isRunning ? (isResting ? Color.purple.opacity(0.1) : Color.green.opacity(0.1)) : Color.orange.opacity(0.1))
-                    
-                    // 进度条
-                    if settings.isRunning {
-                        GeometryReader { geometry in
-                            RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            (isResting ? Color.purple : Color.green).opacity(0.25),
-                                            (isResting ? Color.purple : Color.green).opacity(0.15)
-                                        ],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .frame(width: geometry.size.width * progressValue)
-                                .animation(.linear(duration: 0.3), value: progressValue)
-                        }
-                    }
-                    
-                    // 边框
-                    RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
-                        .strokeBorder(settings.isRunning ? (isResting ? Color.purple.opacity(0.3) : Color.green.opacity(0.3)) : Color.orange.opacity(0.3), lineWidth: 1)
-                }
-            )
-            
-            // 验证提示
-            if !settings.isContentValid() {
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.red)
-                    Text("标题、描述和Emoji至少需要有一项不为空")
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                    Spacer()
-                }
-                .padding(.horizontal, DesignTokens.Spacing.sm)
-            }
-        }
-        .frame(width: 380)
+        .frame(width: 380, height: 240)
     }
     
     // MARK: - Test Button
     
     private var testButton: some View {
         Button {
-            guard settings.isContentValid() else {
+            guard let focusedTimer = getFocusedTimer(), focusedTimer.isContentValid() else {
                 return
             }
             
             sendingTest = true
             Task {
-                await controller.sendTest(settings: settings)
+                await controller.sendTest(for: focusedTimer, settings: settings)
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 sendingTest = false
             }
@@ -239,69 +228,21 @@ struct PreviewSectionView: View {
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
-        .disabled(sendingTest || settings.isRunning || !settings.isContentValid())
+        .disabled(sendingTest || settings.isRunning || getFocusedTimer()?.isContentValid() != true)
         .frame(width: 380)
     }
     
     // MARK: - Helper Methods
     
-    private func updateCountdown() {
-        guard settings.isRunning else {
-            countdownText = ""
-            progressValue = 0.0
-            return
+    private func getFocusedTimer() -> TimerItem? {
+        if let focusedID = settings.focusedTimerID {
+            return settings.timers.first { $0.id == focusedID }
         }
-
-        if isResting {
-            // 休息状态
-            let now = Date()
-            let lastFire = settings.lastFireDate ?? now
-            let restEnd = lastFire.addingTimeInterval(settings.restSeconds)
-            let remaining = restEnd.timeIntervalSince(now)
-
-            if remaining <= 1.0 {
-                countdownText = "休息结束，即将开始..."
-                progressValue = 1.0
-                return
-            }
-
-            let elapsed = settings.restSeconds - remaining
-            progressValue = max(0, min(1.0, elapsed / settings.restSeconds))
-
-            let seconds = Int(remaining)
-            let minutes = seconds / 60
-            let secs = seconds % 60
-
-            countdownText = String(format: "休息中... %d:%02d", minutes, secs)
-        } else {
-            // 正常计时状态
-            let now = Date()
-            let lastFire = settings.lastFireDate ?? now
-            let nextFire = lastFire.addingTimeInterval(settings.intervalSeconds)
-            let remaining = nextFire.timeIntervalSince(now)
-
-            if remaining <= 1.0 {
-                countdownText = "下次通知：即将发送..."
-                progressValue = 1.0
-                return
-            }
-
-            let elapsed = settings.intervalSeconds - remaining
-            progressValue = max(0, min(1.0, elapsed / settings.intervalSeconds))
-
-            let seconds = Int(remaining)
-            let hours = seconds / 3600
-            let minutes = (seconds % 3600) / 60
-            let secs = seconds % 60
-
-            if hours > 0 {
-                countdownText = String(format: "下次通知：%d:%02d:%02d", hours, minutes, secs)
-            } else if minutes > 0 {
-                countdownText = String(format: "下次通知：%d:%02d", minutes, secs)
-            } else {
-                countdownText = String(format: "下次通知：%d秒", secs)
-            }
-        }
+        return settings.timers.first
+    }
+    
+    private func toggleTimer(_ timer: TimerItem) {
+        // 删除旧的 toggle 逻辑，不再需要
     }
 }
 
@@ -319,5 +260,96 @@ struct VisualEffectTransparentView: NSViewRepresentable {
     
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         // 保持设置不变
+    }
+}
+
+// MARK: - Timer List Item View
+
+struct TimerListItemView: View {
+    let timer: TimerItem
+    let isFocused: Bool
+    let isRunning: Bool
+    let onToggle: () -> Void
+    let onFocus: () -> Void
+    
+    @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var controller: ReminderController
+    
+    var body: some View {
+        HStack(spacing: DesignTokens.Spacing.sm) {
+            // 图标和名称
+            HStack(spacing: 6) {
+                Text(timer.emoji)
+                    .font(.body)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(timer.name)
+                        .font(.callout)
+                        .lineLimit(1)
+                    // 显示关键信息
+                    HStack(spacing: 4) {
+                        Text(timer.formattedInterval())
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(timer.title.isEmpty ? timer.body : timer.title)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            // 休息和自定义颜色标记
+            HStack(spacing: DesignTokens.Spacing.xs) {
+                if timer.isRestEnabled {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.purple)
+                        .help("休息 \(timer.formattedRestInterval())")
+                }
+                
+                if timer.customColor != nil {
+                    Circle()
+                        .fill(timer.customColor?.toColor() ?? .gray)
+                        .frame(width: 8, height: 8)
+                        .help("自定义颜色")
+                }
+            }
+            
+            // 启动/停止按钮
+            if timer.isContentValid() {
+                Button {
+                    if timer.isRunning {
+                        controller.stopTimer(timer.id, settings: settings)
+                    } else {
+                        controller.startTimer(timer.id, settings: settings)
+                    }
+                } label: {
+                    Image(systemName: timer.isRunning ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(timer.isRunning ? .orange : .green)
+                }
+                .buttonStyle(.plain)
+                .help(timer.isRunning ? "暂停计时器" : "启动计时器")
+            }
+        }
+        .padding(.horizontal, DesignTokens.Spacing.sm)
+        .padding(.vertical, DesignTokens.Spacing.xs)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
+                .fill(isFocused ? Color.blue.opacity(0.1) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadiusSmall)
+                .strokeBorder(isFocused ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onFocus()
+        }
     }
 }
