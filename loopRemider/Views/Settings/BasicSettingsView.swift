@@ -63,9 +63,8 @@ struct BasicSettingsView: View {
                 }
                 
                 SettingRow(icon: "text.alignleft", iconColor: .green, title: "描述") {
-                    TextField("输入描述内容", text: $settings.notifBody, axis: .vertical)
+                    TextField("输入描述内容", text: $settings.notifBody)
                         .textFieldStyle(.roundedBorder)
-                        .lineLimit(2...5)
                         .disabled(settings.isRunning)
                 }
                 
@@ -135,7 +134,7 @@ struct BasicSettingsView: View {
                         .pickerStyle(.segmented)
                         .frame(width: DesignTokens.Layout.pickerWidth)
                         .disabled(settings.isRunning)
-                        .onChange(of: selectedUnit) { _, _ in
+                        .onChange(of: selectedUnit) { _ in
                             validateAndUpdateInterval()
                         }
 
@@ -201,7 +200,7 @@ struct BasicSettingsView: View {
                             .pickerStyle(.segmented)
                             .frame(width: DesignTokens.Layout.pickerWidth)
                             .disabled(settings.isRunning)
-                            .onChange(of: restSelectedUnit) { _, _ in
+                            .onChange(of: restSelectedUnit) { _ in
                                 validateAndUpdateRestInterval()
                             }
 
@@ -496,15 +495,15 @@ struct BasicSettingsView: View {
 
 // MARK: - Preview
 
+#if DEBUG
 #Preview {
-    @Previewable @State var inputValue = "30"
-    @Previewable @State var selectedUnit = BasicSettingsView.TimeUnit.seconds
-    
+    // macOS 12 兼容：不使用 @Previewable
     BasicSettingsView(
-        inputValue: $inputValue,
-        selectedUnit: $selectedUnit
+        inputValue: .constant("30"),
+        selectedUnit: .constant(BasicSettingsView.TimeUnit.seconds)
     )
     .environmentObject(AppSettings())
     .frame(width: 600)
     .padding()
 }
+#endif

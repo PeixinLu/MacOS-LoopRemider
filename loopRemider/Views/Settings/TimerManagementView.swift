@@ -380,9 +380,8 @@ struct TimerItemCard: View {
                 }
                 
                 SettingRow(icon: "text.alignleft", iconColor: .green, title: "描述") {
-                    TextField("通知内容", text: $timer.body, axis: .vertical)
+                    TextField("通知内容", text: $timer.body)
                         .textFieldStyle(.roundedBorder)
-                        .lineLimit(2...5)
                         .disabled(settings.isRunning)
                         .focused(focusedField, equals: .timerBody(timer.id))
                 }
@@ -402,7 +401,7 @@ struct TimerItemCard: View {
                             // 按 Return 键时校验
                             validateAndUpdateInterval()
                         }
-                        .onChange(of: intervalInputValue) { _, newValue in
+                        .onChange(of: intervalInputValue) { newValue in
                             // 实时验证输入是否为数字
                             let filtered = newValue.filter { "0123456789.".contains($0) }
                             if filtered != newValue {
@@ -418,7 +417,7 @@ struct TimerItemCard: View {
                         .pickerStyle(.segmented)
                         .frame(width: 120)
                         .disabled(settings.isRunning)
-                        .onChange(of: intervalSelectedUnit) { _, _ in
+                        .onChange(of: intervalSelectedUnit) { _ in
                             validateAndUpdateInterval()
                         }
                         
@@ -456,7 +455,7 @@ struct TimerItemCard: View {
                                 // 按 Return 键时校验
                                 validateAndUpdateRestInterval()
                             }
-                            .onChange(of: restInputValue) { _, newValue in
+                            .onChange(of: restInputValue) { newValue in
                                 // 实时验证输入是否为数字
                                 let filtered = newValue.filter { "0123456789.".contains($0) }
                                 if filtered != newValue {
@@ -472,7 +471,7 @@ struct TimerItemCard: View {
                             .pickerStyle(.segmented)
                             .frame(width: 120)
                             .disabled(settings.isRunning)
-                            .onChange(of: restSelectedUnit) { _, _ in
+                            .onChange(of: restSelectedUnit) { _ in
                                 validateAndUpdateRestInterval()
                             }
                             
@@ -553,14 +552,14 @@ struct TimerItemCard: View {
                     }
                     .pickerStyle(.segmented)
                     .disabled(settings.isRunning)
-                    .onChange(of: selectedColorType) { _, newValue in
+                    .onChange(of: selectedColorType) { newValue in
                         updateTimerColor(newValue)
                     }
                     
                     if selectedColorType == .custom {
                         ColorPicker("自定义颜色", selection: $customColor)
                             .disabled(settings.isRunning)
-                            .onChange(of: customColor) { _, newColor in
+                            .onChange(of: customColor) { newColor in
                                 let components = newColor.components()
                                 timer.customColor = TimerItem.TimerColor(
                                     colorType: .custom,

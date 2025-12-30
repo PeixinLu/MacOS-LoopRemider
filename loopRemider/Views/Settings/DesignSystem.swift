@@ -107,7 +107,7 @@ struct PageHeader: View {
         HStack(spacing: DesignTokens.Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: DesignTokens.Icon.pageHeader))
-                .foregroundStyle(iconColor.gradient)
+                .foregroundStyle(iconColor)
             
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                 Text(title)

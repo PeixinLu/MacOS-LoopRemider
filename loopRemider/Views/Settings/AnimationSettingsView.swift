@@ -112,7 +112,7 @@ struct AnimationSettingsView: View {
                     Slider(value: $settings.overlayStayDuration, in: 1...min(60, maxStayDuration), step: 0.5)
                         .disabled(settings.isRunning)
                         .frame(width: DesignTokens.Layout.sliderWidth)
-                        .onChange(of: settings.overlayStayDuration) { _, _ in
+                        .onChange(of: settings.overlayStayDuration) { _ in
                             settings.validateTimingSettings()
                         }
                     Text(String(format: "%.1f秒", settings.overlayStayDuration))
@@ -148,7 +148,7 @@ struct AnimationSettingsView: View {
                     Slider(value: $settings.overlayFadeOutDelay, in: 0...maxFadeOutDelay, step: 0.5)
                         .disabled(settings.isRunning)
                         .frame(width: DesignTokens.Layout.sliderWidth)
-                        .onChange(of: settings.overlayFadeOutDelay) { _, _ in
+                        .onChange(of: settings.overlayFadeOutDelay) { _ in
                             settings.validateTimingSettings()
                         }
                     Text(String(format: "%.1f秒", settings.overlayFadeOutDelay))
@@ -171,7 +171,7 @@ struct AnimationSettingsView: View {
                     Slider(value: $settings.overlayFadeOutDuration, in: 0.5...maxFadeOutDuration, step: 0.5)
                         .disabled(settings.isRunning)
                         .frame(width: DesignTokens.Layout.sliderWidth)
-                        .onChange(of: settings.overlayFadeOutDuration) { _, _ in
+                        .onChange(of: settings.overlayFadeOutDuration) { _ in
                             settings.validateTimingSettings()
                         }
                     Text(String(format: "%.1f秒", settings.overlayFadeOutDuration))

@@ -41,18 +41,28 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        NavigationSplitView(columnVisibility: .constant(.all)) {
+        // macOS 12 兼容：使用 HStack 代替 NavigationSplitView
+        HStack(spacing: 0) {
             // 左侧导航栏
-            List(SettingsCategory.allCases, selection: $selectedCategory) { category in
-                Label(category.rawValue, systemImage: category.icon)
-                    .tag(category)
+            VStack(spacing: 0) {
+                List {
+                    ForEach(SettingsCategory.allCases, id: \.self) { category in
+                        Button(action: {
+                            selectedCategory = category
+                        }) {
+                            Label(category.rawValue, systemImage: category.icon)
+                                .foregroundColor(selectedCategory == category ? .accentColor : .primary)
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(selectedCategory == category ? Color.accentColor.opacity(0.15) : Color.clear)
+                    }
+                }
+                .listStyle(.sidebar)
             }
-            .navigationSplitViewColumnWidth(160)
-            .listStyle(.sidebar)
-            .toolbar(removing: .sidebarToggle)
             .frame(width: 160)
-            .fixedSize(horizontal: true, vertical: false)
-        } detail: {
+            
+            Divider()
+            
             // 右侧内容区 - 水平布局
             HStack(alignment: .top, spacing: DesignTokens.Spacing.xxl) {
                 // 左侧：表单区域（各页面内部处理滚动）

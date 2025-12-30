@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AC45010A2EE96FC30037C74C /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = AC4501092EE96FC30037C74C /* LaunchAtLogin */; };
+		9605C8502F037C90002AD45A /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 9605C84F2F037C90002AD45A /* LaunchAtLogin */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,7 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AC45010A2EE96FC30037C74C /* LaunchAtLogin in Frameworks */,
+				9605C8502F037C90002AD45A /* LaunchAtLogin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,7 +83,7 @@
 			);
 			name = loopRemider;
 			packageProductDependencies = (
-				AC4501092EE96FC30037C74C /* LaunchAtLogin */,
+				9605C84F2F037C90002AD45A /* LaunchAtLogin */,
 			);
 			productName = loopRemider;
 			productReference = AC6290142EE27F5A0026BB1C /* loopRemider.app */;
@@ -114,7 +114,7 @@
 			mainGroup = AC62900B2EE27F5A0026BB1C;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				AC4501082EE96FC30037C74C /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+				9605C84E2F037C90002AD45A /* XCRemoteSwiftPackageReference "LaunchAtLogin-Legacy" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AC6290152EE27F5A0026BB1C /* Products */;
@@ -273,7 +273,7 @@
 				CODE_SIGN_ENTITLEMENTS = loopRemider/loopRemider.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 20;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -286,7 +286,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.8;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = px.loopRemider;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -307,7 +308,7 @@
 				CODE_SIGN_ENTITLEMENTS = loopRemider/loopRemider.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 20;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -320,7 +321,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.8;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = px.loopRemider;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -357,9 +359,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		AC4501082EE96FC30037C74C /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
+		9605C84E2F037C90002AD45A /* XCRemoteSwiftPackageReference "LaunchAtLogin-Legacy" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
+			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Legacy";
 			requirement = {
 				branch = main;
 				kind = branch;
@@ -368,9 +370,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AC4501092EE96FC30037C74C /* LaunchAtLogin */ = {
+		9605C84F2F037C90002AD45A /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = AC4501082EE96FC30037C74C /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
+			package = 9605C84E2F037C90002AD45A /* XCRemoteSwiftPackageReference "LaunchAtLogin-Legacy" */;
 			productName = LaunchAtLogin;
 		};
 /* End XCSwiftPackageProductDependency section */
