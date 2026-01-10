@@ -41,20 +41,33 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        NavigationSplitView(columnVisibility: .constant(.all)) {
-            // 左侧导航栏
-            List(SettingsCategory.allCases, selection: $selectedCategory) { category in
-                Label(category.rawValue, systemImage: category.icon)
-                    .tag(category)
+        HStack(spacing: 0) {
+            // 左侧固定宽度的侧边栏
+            VStack(spacing: 0) {
+                List(SettingsCategory.allCases, selection: $selectedCategory) { category in
+                    Label(category.rawValue, systemImage: category.icon)
+                        .tag(category)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 6)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                }
+                .listStyle(.sidebar)
+                .scrollContentBackground(.hidden)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .padding(.top, 8)
+                .padding(.leading, 6)
             }
-            .navigationSplitViewColumnWidth(160)
-            .listStyle(.sidebar)
-            .toolbar(removing: .sidebarToggle)
-            .frame(width: 160)
-            .fixedSize(horizontal: true, vertical: false)
-        } detail: {
+            .frame(width: 170)
+            .background(Color(nsColor: .controlBackgroundColor))
+            
+            // 分隔线
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor))
+                .frame(width: 1)
+                .frame(maxHeight: .infinity)
+            
             // 右侧内容区 - 水平布局
-            HStack(alignment: .top, spacing: DesignTokens.Spacing.xxl) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.lg) {
                 // 左侧：表单区域（各页面内部处理滚动）
                 Group {
                     switch selectedCategory {
@@ -77,8 +90,8 @@ struct SettingsView: View {
                         AboutView()
                     }
                 }
-                .padding(.leading, DesignTokens.Spacing.xxl)
-                .frame(width: shouldShowPreview ? 480 : nil)
+                .padding(.leading, DesignTokens.Spacing.lg)
+                .frame(width: shouldShowPreview ? 390 : nil)
                 .frame(maxWidth: shouldShowPreview ? nil : .infinity)
                 
                 // 右侧：预览区域
@@ -93,14 +106,14 @@ struct SettingsView: View {
                             selectedCategory = .timers
                         }
                     )
-                    .frame(width: 400)
-                    .padding(.top, DesignTokens.Spacing.xxl)
-                    .padding(.trailing, DesignTokens.Spacing.xxl)
+                    .frame(width: 340)
+                    .padding(.top, DesignTokens.Spacing.lg)
+                    .padding(.trailing, DesignTokens.Spacing.lg)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: 1080, height: 680)
+        .frame(width: 960, height: 680)
         .onAppear {
             initializeInputValue()
             if settings.isRunning {

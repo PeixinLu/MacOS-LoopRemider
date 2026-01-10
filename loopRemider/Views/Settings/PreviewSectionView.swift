@@ -94,7 +94,7 @@ struct PreviewSectionView: View {
             // 测试按钮
             testButton
         }
-        .frame(width: 380)
+        .frame(width: 340)
     }
     
     // MARK: - Preview Area
@@ -188,7 +188,7 @@ struct PreviewSectionView: View {
                     .padding(8)
                 )
         }
-        .frame(width: 380, height: 240)
+        .frame(width: 340, height: 240)
     }
     
     // MARK: - Test Button
@@ -223,7 +223,7 @@ struct PreviewSectionView: View {
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
         .disabled(sendingTest || settings.isRunning || getFocusedTimer()?.isContentValid() != true)
-        .frame(width: 380)
+        .frame(width: 340)
     }
     
     // MARK: - Helper Methods
@@ -389,7 +389,7 @@ struct TimerListItemView: View {
     
     private var progressWidth: CGFloat {
         // 计算进度条宽度
-        return 356 * progressValue // 380 - 2*12 padding
+        return 316 * progressValue // 340 - 2*12 padding
     }
     
     private func updateCountdown() {
