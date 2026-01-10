@@ -51,18 +51,6 @@ struct PreviewSectionView: View {
                 Text("实时预览")
                     .font(.headline)
                 Spacer()
-                Button {
-                    onNavigateToTimers?()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "gearshape.fill")
-                            .font(.caption)
-                        Text("计时器配置")
-                            .font(.caption)
-                    }
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.blue)
             }
             
             // 预览区域
@@ -71,25 +59,46 @@ struct PreviewSectionView: View {
             Divider()
                 .padding(.vertical, DesignTokens.Spacing.sm)
             
-            // 计时器列表
-            ScrollView {
-                VStack(spacing: DesignTokens.Spacing.sm) {
-                    ForEach(settings.timers) { timer in
-                        TimerListItemView(
-                            timer: timer,
-                            isFocused: settings.focusedTimerID == timer.id,
-                            isRunning: settings.isRunning,
-                            onToggle: {
-                                toggleTimer(timer)
-                            },
-                            onFocus: {
-                                settings.focusedTimerID = timer.id
-                            }
-                        )
+            // 计时器列表（带配置按钮）
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                HStack {
+                    Text("计时器列表")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button {
+                        onNavigateToTimers?()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "gearshape.fill")
+                                .font(.caption)
+                            Text("计时器配置")
+                                .font(.caption)
+                        }
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.blue)
+                }
+                
+                ScrollView {
+                    VStack(spacing: DesignTokens.Spacing.sm) {
+                        ForEach(settings.timers) { timer in
+                            TimerListItemView(
+                                timer: timer,
+                                isFocused: settings.focusedTimerID == timer.id,
+                                isRunning: settings.isRunning,
+                                onToggle: {
+                                    toggleTimer(timer)
+                                },
+                                onFocus: {
+                                    settings.focusedTimerID = timer.id
+                                }
+                            )
+                        }
                     }
                 }
+                .frame(maxHeight: 260)
             }
-            .frame(maxHeight: 150)
             
             // 测试按钮
             testButton
@@ -218,10 +227,11 @@ struct PreviewSectionView: View {
                     .font(.callout)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, DesignTokens.Spacing.md)
+            .padding(.vertical, DesignTokens.Spacing.sm)
         }
         .buttonStyle(.borderedProminent)
-        .controlSize(.regular)
+        .controlSize(.small)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .disabled(sendingTest || settings.isRunning || getFocusedTimer()?.isContentValid() != true)
         .frame(width: 340)
     }

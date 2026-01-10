@@ -28,11 +28,6 @@ struct AnimationSettingsView: View {
                         
                         Divider().padding(.vertical, DesignTokens.Spacing.xs)
                         
-                        // 停留时间
-                        stayDurationSection
-                        
-                        Divider().padding(.vertical, DesignTokens.Spacing.xs)
-                        
                         // 渐透明设置
                         fadeOutToggleSection
                         
@@ -104,38 +99,31 @@ struct AnimationSettingsView: View {
         }
     }
     
-    private var stayDurationSection: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-            SettingRow(icon: "timer", iconColor: .orange, title: "停留时间") {
-                let maxStayDuration = max(1.0, settings.intervalSeconds - 1.0)
-                HStack(spacing: DesignTokens.Spacing.sm) {
-                    Slider(value: $settings.overlayStayDuration, in: 1...min(60, maxStayDuration), step: 0.5)
-                        .disabled(settings.isRunning)
-                        .frame(width: DesignTokens.Layout.sliderWidth)
-                        .onChange(of: settings.overlayStayDuration) { _, _ in
-                            settings.validateTimingSettings()
-                        }
-                    Text(String(format: "%.1f秒", settings.overlayStayDuration))
-                        .font(DesignTokens.Typography.value)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.orange)
-                        .frame(width: DesignTokens.Layout.valueDisplayWidth, alignment: .trailing)
-                }
-            }
-            
-            InfoHint("通知显示后停留的时间，最大为下次通知时间-过渡动画时间", color: .orange)
-        }
-    }
-    
     private var fadeOutToggleSection: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             SettingRow(icon: "eye.slash.fill", iconColor: .purple, title: "我透明了") {
-                Toggle("", isOn: $settings.overlayEnableFadeOut)
-                    .toggleStyle(.switch)
-                    .disabled(settings.isRunning)
-                    .labelsHidden()
+                HStack(spacing: DesignTokens.Spacing.xs) {
+                    Text("Beta")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(Color.orange)
+                        )
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: $settings.overlayEnableFadeOut)
+                        .toggleStyle(.switch)
+                        .disabled(settings.isRunning)
+                        .labelsHidden()
+                }
             }
             
+            InfoHint("该功能暂不稳定，未经过完整测试，后续可能放弃维护", color: .orange)
             InfoHint("为减少对内容的干扰，通知弹出后会慢慢变透明，直至下一个通知到来", color: .purple)
         }
     }

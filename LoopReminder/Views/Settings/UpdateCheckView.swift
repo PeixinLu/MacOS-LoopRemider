@@ -9,63 +9,56 @@ struct UpdateCheckView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-            // 页面标题
-            HStack {
-                PageHeader(
-                    icon: "arrow.down.circle.fill",
-                    iconColor: .blue,
-                    title: "检查更新",
-                    subtitle: "当前版本：\(updater.versionDescription)"
-                )
-                
-                Spacer()
-                
-                Button("检查更新") {
-                    updater.checkForUpdates()
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding(.trailing, DesignTokens.Spacing.lg)
+            // 页面标题 - 固定
+            PageHeader(
+                icon: "arrow.down.circle.fill",
+                iconColor: .blue,
+                title: "检查更新",
+                subtitle: "当前版本：\(updater.versionDescription)"
+            )
             
-            Divider()
-            
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-                SettingsSection(showDivider: false) {
-                    HStack {
-                        Text("当前版本")
-                        Spacer()
-                        Text(updater.versionDescription)
-                            .foregroundColor(.secondary)
+            // 内容区域 - 可滚动
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
+                    // 检查更新按钮
+                    Button("检查更新") {
+                        updater.checkForUpdates()
                     }
-                }
-
-                if !feedURL.isEmpty {
-                    SettingsSection(showDivider: false) {
-                        Text("更新源：\(feedURL)")
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    
+                    Divider()
+                    
+                    // 设置项
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                        SettingRow(icon: "number.circle.fill", iconColor: .blue, title: "当前版本") {
+                            Text(updater.versionDescription)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        SettingRow(icon: "arrow.triangle.2.circlepath.circle.fill", iconColor: .purple, title: "自动检查更新") {
+                            Toggle(
+                                "",
+                                isOn: Binding(
+                                    get: { updater.automaticallyChecksForUpdates },
+                                    set: { newValue in
+                                        updater.setAutomaticallyChecksForUpdates(newValue)
+                                    }
+                                )
+                            )
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
                     }
+                    
+                    Divider()
+                    
+                    InfoHint("点击“检查更新”后，Sparkle 会提示安装并在安装后自动替换并重启应用。", color: .blue)
                 }
-
-                SettingsSection(showDivider: false) {
-                    Toggle(
-                        "自动检查更新",
-                        isOn: Binding(
-                            get: { updater.automaticallyChecksForUpdates },
-                            set: { newValue in
-                                updater.setAutomaticallyChecksForUpdates(newValue)
-                            }
-                        )
-                    )
-                    .toggleStyle(.switch)
-                }
-
-                InfoHint("点击“检查更新”后，Sparkle 会提示安装并在安装后自动替换并重启应用。", color: .blue)
+                .padding(.bottom, DesignTokens.Spacing.xl)
+                .padding(.trailing, DesignTokens.Spacing.lg)
             }
-            .padding(.trailing, DesignTokens.Spacing.lg)
-            .frame(maxWidth: 520, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

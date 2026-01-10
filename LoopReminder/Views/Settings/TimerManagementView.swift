@@ -37,6 +37,11 @@ struct TimerManagementView: View {
             GeometryReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                        // 停留时间设置
+                        stayDurationSection
+                        
+                        Divider().padding(.vertical, DesignTokens.Spacing.xs)
+                        
                         // 操作按钮组
                         HStack(spacing: DesignTokens.Spacing.sm) {
                             startStopAllButton
@@ -78,6 +83,13 @@ struct TimerManagementView: View {
                         
                         // 提示信息
                         InfoHint("计时器颜色会优先于全局配置", color: .blue)
+                        
+                        // 计时器数量提示
+                        if settings.timers.count >= 8 {
+                            InfoHint("已达到最大限制（8个计时器）。过多的计时器会增加心智负担", color: .red)
+                        } else if settings.timers.count > 3 {
+                            InfoHint("当前有\(settings.timers.count)个计时器。过多的计时器可能增加心智负担，建议精简使用", color: .orange)
+                        }
                     }
                     .padding(.bottom, DesignTokens.Spacing.xl)
                     .padding(.trailing, DesignTokens.Spacing.xl)
@@ -104,6 +116,29 @@ struct TimerManagementView: View {
     
     // MARK: - Buttons
     
+    private var stayDurationSection: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+            SettingRow(icon: "timer", iconColor: .orange, title: "停留时间") {
+                let maxStayDuration = max(1.0, settings.intervalSeconds - 1.0)
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    Slider(value: $settings.overlayStayDuration, in: 1...min(60, maxStayDuration), step: 0.5)
+                        .disabled(settings.isRunning)
+                        .frame(width: DesignTokens.Layout.sliderWidth)
+                        .onChange(of: settings.overlayStayDuration) { _, _ in
+                            settings.validateTimingSettings()
+                        }
+                    Text(String(format: "%.1f秒", settings.overlayStayDuration))
+                        .font(DesignTokens.Typography.value)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.orange)
+                        .frame(width: DesignTokens.Layout.valueDisplayWidth, alignment: .trailing)
+                }
+            }
+            
+            InfoHint("通知显示后停留的时间，最大为下次通知时间-过渡动画时间", color: .orange)
+        }
+    }
+    
     private var startStopAllButton: some View {
         let hasRunningTimer = settings.timers.contains(where: { $0.isRunning })
         
@@ -117,6 +152,7 @@ struct TimerManagementView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, DesignTokens.Spacing.xs)
         }
+        .buttonStyle(.bordered)
         .controlSize(.large)
         .tint(hasRunningTimer ? .orange : .green)
     }
@@ -136,6 +172,8 @@ struct TimerManagementView: View {
         }
         // .buttonStyle(.borderedProminent)
         .controlSize(.large)
+        .disabled(settings.timers.count >= 8)
+        .opacity(settings.timers.count >= 8 ? 0.5 : 1.0)
     }
     
     // MARK: - Helper Methods
@@ -157,6 +195,11 @@ struct TimerManagementView: View {
     }
     
     private func addNewTimer() {
+        // 限制最大计时器数量为8个
+        guard settings.timers.count < 8 else {
+            return
+        }
+        
         let timerNumber = settings.timers.count + 1
         let newTimer = TimerItem(
             emoji: "🔔",
@@ -223,6 +266,7 @@ struct TimerItemCard: View {
     @State private var isRestFocused: Bool = false // 休息输入框是否有焦点
     @State private var intervalValidationMessage: String? = nil // 间隔验证消息
     @State private var restValidationMessage: String? = nil // 休息验证消息
+    @State private var isHovering: Bool = false // 鼠标悬停状态
     
     private let timer2 = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
@@ -332,6 +376,20 @@ struct TimerItemCard: View {
                     }
                 }
                 
+                // 悬停时显示删除按钮
+                if isHovering && settings.timers.count > 1 {
+                    Button {
+                        onDelete()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.red)
+                    }
+                    .buttonStyle(.plain)
+                    .help("删除计时器")
+                    .transition(.scale.combined(with: .opacity))
+                }
+                
                 // 启动/停止按钮
                 if timer.isContentValid() {
                     Button {
@@ -365,6 +423,11 @@ struct TimerItemCard: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 onFocus()
+            }
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isHovering = hovering
+                }
             }
             
             // 进度条
