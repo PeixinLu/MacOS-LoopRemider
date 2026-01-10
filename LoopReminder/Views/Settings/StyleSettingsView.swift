@@ -241,7 +241,22 @@ struct SettingRow<Content: View>: View {
     let icon: String
     let iconColor: Color
     let title: String
+    let labelWidth: CGFloat?
     @ViewBuilder let content: () -> Content
+    
+    init(
+        icon: String,
+        iconColor: Color,
+        title: String,
+        labelWidth: CGFloat? = nil,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.icon = icon
+        self.iconColor = iconColor
+        self.title = title
+        self.labelWidth = labelWidth
+        self.content = content
+    }
     
     var body: some View {
         HStack {
@@ -253,7 +268,7 @@ struct SettingRow<Content: View>: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
             }
-            .frame(width: DesignTokens.Layout.labelWidth, alignment: .leading)
+            .frame(width: labelWidth ?? DesignTokens.Layout.labelWidth, alignment: .leading)
             
             Spacer()
             

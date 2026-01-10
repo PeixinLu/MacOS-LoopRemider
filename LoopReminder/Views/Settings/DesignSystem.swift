@@ -201,14 +201,15 @@ struct InfoHint: View {
     }
     
     var body: some View {
-        HStack(spacing: DesignTokens.Spacing.sm) {
+        HStack(alignment: .top, spacing: DesignTokens.Spacing.sm) {
             Image(systemName: "info.circle.fill")
                 .font(DesignTokens.Typography.hint)
                 .foregroundStyle(color.opacity(0.6))
             Text(message)
                 .font(DesignTokens.Typography.hint)
                 .foregroundStyle(.secondary)
-            Spacer()
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
         .padding(.leading, DesignTokens.Spacing.xs)
     }

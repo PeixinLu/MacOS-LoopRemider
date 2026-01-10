@@ -71,7 +71,7 @@ struct TimerManagementView: View {
                         }
                         
                         // 提示信息
-                        InfoHint("计时器的颜色配置会优先于\"通知样式\"页的全局颜色配置", color: .blue)
+                        InfoHint("计时器颜色会优先于全局配置", color: .blue)
                     }
                     .padding(.bottom, DesignTokens.Spacing.xl)
                     .padding(.trailing, DesignTokens.Spacing.xl)
@@ -194,6 +194,7 @@ struct TimerItemCard: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+        .frame(width: 350, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius)
                 .fill(isFocused ? Color.blue.opacity(0.05) : Color.secondary.opacity(0.05))
@@ -202,7 +203,6 @@ struct TimerItemCard: View {
             RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius)
                 .strokeBorder(isFocused ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 2)
         )
-        .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
             timerID = timer.id // 初始化时保存ID
             initializeInputValues()
@@ -350,13 +350,13 @@ struct TimerItemCard: View {
                     .foregroundStyle(.secondary)
                 
                 // 通知内容
-                SettingRow(icon: "face.smiling", iconColor: .green, title: "图标") {
-                    HStack(spacing: 8) {
+                SettingRow(icon: "face.smiling", iconColor: .green, title: "图标", labelWidth: 70) {
+                    HStack(spacing: 6) {
                         TextField("", text: $timer.emoji)
                             .textFieldStyle(.roundedBorder)
                             .disabled(settings.isRunning)
                             .focused(focusedField, equals: .timerEmoji(timer.id))
-                            .frame(width: 60)
+                            .frame(width: 50)
                         
                         Button {
                             // 聚焦到emoji输入框，触发emoji选择器
@@ -366,70 +366,71 @@ struct TimerItemCard: View {
                                 NSApp.orderFrontCharacterPalette(nil)
                             }
                         } label: {
-                            HStack(spacing: 4) {
+                            HStack(spacing: 3) {
                                 Image(systemName: "face.smiling")
-                                Text("选择 Emoji")
+                                    .font(.caption)
+                                Text("Emoji")
+                                    .font(.caption)
                             }
                         }
+                        .controlSize(.small)
                         .disabled(settings.isRunning)
                     }
                 }
                 
-                SettingRow(icon: "textformat", iconColor: .green, title: "标题") {
-                    TextField("通知标题（也作为计时器名称）", text: $timer.title)
+                SettingRow(icon: "textformat", iconColor: .green, title: "标题", labelWidth: 70) {
+                    TextField("计时器名称", text: $timer.title)
                         .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: DesignTokens.Layout.formFieldMaxWidth)
                         .disabled(settings.isRunning)
                         .focused(focusedField, equals: .timerTitle(timer.id))
                 }
                 
-                SettingRow(icon: "text.alignleft", iconColor: .green, title: "描述") {
+                SettingRow(icon: "text.alignleft", iconColor: .green, title: "描述", labelWidth: 70) {
                     TextField("通知内容", text: $timer.body, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
-                        .lineLimit(2...5)
-                        .frame(maxWidth: DesignTokens.Layout.formFieldMaxWidth)
+                        .lineLimit(2...4)
                         .disabled(settings.isRunning)
                         .focused(focusedField, equals: .timerBody(timer.id))
                 }
                 
                 // 通知频率
-                SettingRow(icon: "timer", iconColor: .blue, title: "通知间隔") {
-                    HStack(spacing: DesignTokens.Spacing.md) {
-                        TextField("间隔", text: $intervalInputValue, onEditingChanged: { isEditing in
-                            if !isEditing {
+                SettingRow(icon: "timer", iconColor: .blue, title: "间隔", labelWidth: 70) {
+                    VStack(alignment: .trailing, spacing: 6) {
+                        HStack(spacing: 6) {
+                            TextField("间隔", text: $intervalInputValue, onEditingChanged: { isEditing in
+                                if !isEditing {
+                                    validateAndUpdateInterval()
+                                }
+                            })
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 50)
+                            .disabled(settings.isRunning)
+                            .onSubmit {
                                 validateAndUpdateInterval()
                             }
-                        })
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 80)
-                        .disabled(settings.isRunning)
-                        .onSubmit {
-                            // 按 Return 键时校验
-                            validateAndUpdateInterval()
-                        }
-                        .onChange(of: intervalInputValue) { _, newValue in
-                            // 实时验证输入是否为数字
-                            let filtered = newValue.filter { "0123456789.".contains($0) }
-                            if filtered != newValue {
-                                intervalInputValue = filtered
+                            .onChange(of: intervalInputValue) { _, newValue in
+                                let filtered = newValue.filter { "0123456789.".contains($0) }
+                                if filtered != newValue {
+                                    intervalInputValue = filtered
+                                }
                             }
-                        }
-                        
-                        Picker("", selection: $intervalSelectedUnit) {
-                            ForEach(TimeUnit.allCases, id: \.self) { unit in
-                                Text(unit.rawValue).tag(unit)
+                            
+                            Picker("", selection: $intervalSelectedUnit) {
+                                ForEach(TimeUnit.allCases, id: \.self) { unit in
+                                    Text(unit.rawValue).tag(unit)
+                                }
                             }
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 120)
-                        .disabled(settings.isRunning)
-                        .onChange(of: intervalSelectedUnit) { _, _ in
-                            validateAndUpdateInterval()
+                            .pickerStyle(.segmented)
+                            .frame(width: 100)
+                            .disabled(settings.isRunning)
+                            .onChange(of: intervalSelectedUnit) { _, _ in
+                                validateAndUpdateInterval()
+                            }
                         }
                         
                         Text(timer.formattedInterval())
-                            .font(DesignTokens.Typography.value)
-                            .fontWeight(.semibold)
+                            .font(.caption)
+                            .fontWeight(.medium)
                             .foregroundStyle(.blue)
                     }
                 }
@@ -447,43 +448,43 @@ struct TimerItemCard: View {
                 }
                 
                 if timer.isRestEnabled {
-                    SettingRow(icon: "pause.circle.fill", iconColor: .purple, title: "休息时长") {
-                        HStack(spacing: DesignTokens.Spacing.md) {
-                            TextField("时长", text: $restInputValue, onEditingChanged: { isEditing in
-                                if !isEditing {
+                    SettingRow(icon: "pause.circle.fill", iconColor: .purple, title: "时长", labelWidth: 70) {
+                        VStack(alignment: .trailing, spacing: 6) {
+                            HStack(spacing: 6) {
+                                TextField("时长", text: $restInputValue, onEditingChanged: { isEditing in
+                                    if !isEditing {
+                                        validateAndUpdateRestInterval()
+                                    }
+                                })
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 50)
+                                .disabled(settings.isRunning)
+                                .onSubmit {
                                     validateAndUpdateRestInterval()
                                 }
-                            })
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 80)
-                            .disabled(settings.isRunning)
-                            .onSubmit {
-                                // 按 Return 键时校验
-                                validateAndUpdateRestInterval()
-                            }
-                            .onChange(of: restInputValue) { _, newValue in
-                                // 实时验证输入是否为数字
-                                let filtered = newValue.filter { "0123456789.".contains($0) }
-                                if filtered != newValue {
-                                    restInputValue = filtered
+                                .onChange(of: restInputValue) { _, newValue in
+                                    let filtered = newValue.filter { "0123456789.".contains($0) }
+                                    if filtered != newValue {
+                                        restInputValue = filtered
+                                    }
                                 }
-                            }
-                            
-                            Picker("", selection: $restSelectedUnit) {
-                                ForEach(TimeUnit.allCases, id: \.self) { unit in
-                                    Text(unit.rawValue).tag(unit)
+                                
+                                Picker("", selection: $restSelectedUnit) {
+                                    ForEach(TimeUnit.allCases, id: \.self) { unit in
+                                        Text(unit.rawValue).tag(unit)
+                                    }
                                 }
-                            }
-                            .pickerStyle(.segmented)
-                            .frame(width: 120)
-                            .disabled(settings.isRunning)
-                            .onChange(of: restSelectedUnit) { _, _ in
-                                validateAndUpdateRestInterval()
+                                .pickerStyle(.segmented)
+                                .frame(width: 100)
+                                .disabled(settings.isRunning)
+                                .onChange(of: restSelectedUnit) { _, _ in
+                                    validateAndUpdateRestInterval()
+                                }
                             }
                             
                             Text(timer.formattedRestInterval())
-                                .font(DesignTokens.Typography.value)
-                                .fontWeight(.semibold)
+                                .font(.caption)
+                                .fontWeight(.medium)
                                 .foregroundStyle(.purple)
                         }
                     }
@@ -501,7 +502,7 @@ struct TimerItemCard: View {
                             Image(systemName: "trash.fill")
                             Text("删除此计时器")
                         }
-                        .frame(maxWidth: DesignTokens.Layout.formFieldMaxWidth)
+                        .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -579,7 +580,7 @@ struct TimerItemCard: View {
                             }
                     }
                     
-                    InfoHint("此计时器的颜色会优先于\"通知样式\"页的全局颜色", color: .orange)
+                    InfoHint("此计时器的颜色会优先于全局颜色", color: .orange)
                 }
             }
         }
