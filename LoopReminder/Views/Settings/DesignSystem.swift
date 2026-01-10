@@ -39,6 +39,8 @@ enum DesignTokens {
         static let valueDisplayWidth: CGFloat = 55
         /// 输入框固定宽度
         static let inputFieldWidth: CGFloat = 60
+        /// 表单内容最大宽度
+        static let formFieldMaxWidth: CGFloat = 280
         /// Picker 固定宽度
         static let pickerWidth: CGFloat = 140
         /// 圆角半径

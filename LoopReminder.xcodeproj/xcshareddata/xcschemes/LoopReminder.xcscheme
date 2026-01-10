@@ -18,7 +18,7 @@
                BlueprintIdentifier = "AC6290132EE27F5A0026BB1C"
                BuildableName = "LoopReminder.app"
                BlueprintName = "LoopReminder"
-               ReferencedContainer = "container:loopRemider.xcodeproj">
+               ReferencedContainer = "container:LoopReminder.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,7 +47,7 @@
             BlueprintIdentifier = "AC6290132EE27F5A0026BB1C"
             BuildableName = "LoopReminder.app"
             BlueprintName = "LoopReminder"
-            ReferencedContainer = "container:loopRemider.xcodeproj">
+            ReferencedContainer = "container:LoopReminder.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,7 +64,7 @@
             BlueprintIdentifier = "AC6290132EE27F5A0026BB1C"
             BuildableName = "LoopReminder.app"
             BlueprintName = "LoopReminder"
-            ReferencedContainer = "container:loopRemider.xcodeproj">
+            ReferencedContainer = "container:LoopReminder.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

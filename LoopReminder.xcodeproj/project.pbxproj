@@ -16,7 +16,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AC6290232EE285430026BB1C /* Exceptions for "loopRemider" folder in "LoopReminder" target */ = {
+		AC6290232EE285430026BB1C /* Exceptions for "LoopReminder" folder in "LoopReminder" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -26,12 +26,12 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AC6290162EE27F5A0026BB1C /* loopRemider */ = {
+		AC6290162EE27F5A0026BB1C /* LoopReminder */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AC6290232EE285430026BB1C /* Exceptions for "loopRemider" folder in "LoopReminder" target */,
+				AC6290232EE285430026BB1C /* Exceptions for "LoopReminder" folder in "LoopReminder" target */,
 			);
-			path = loopRemider;
+			path = LoopReminder;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -52,7 +52,7 @@
 		AC62900B2EE27F5A0026BB1C = {
 			isa = PBXGroup;
 			children = (
-				AC6290162EE27F5A0026BB1C /* loopRemider */,
+				AC6290162EE27F5A0026BB1C /* LoopReminder */,
 				AC6290152EE27F5A0026BB1C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -81,7 +81,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AC6290162EE27F5A0026BB1C /* loopRemider */,
+				AC6290162EE27F5A0026BB1C /* LoopReminder */,
 			);
 			name = LoopReminder;
 			packageProductDependencies = (
@@ -107,7 +107,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AC62900F2EE27F5A0026BB1C /* Build configuration list for PBXProject "loopRemider" */;
+			buildConfigurationList = AC62900F2EE27F5A0026BB1C /* Build configuration list for PBXProject "LoopReminder" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -274,7 +274,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = loopRemider/loopRemider.entitlements;
+				CODE_SIGN_ENTITLEMENTS = LoopReminder/loopRemider.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 9;
@@ -282,7 +282,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = loopRemider/Info.plist;
+				INFOPLIST_FILE = LoopReminder/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = NO;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -308,7 +308,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = loopRemider/loopRemider.entitlements;
+				CODE_SIGN_ENTITLEMENTS = LoopReminder/loopRemider.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 9;
@@ -316,7 +316,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = loopRemider/Info.plist;
+				INFOPLIST_FILE = LoopReminder/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = NO;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -340,7 +340,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AC62900F2EE27F5A0026BB1C /* Build configuration list for PBXProject "loopRemider" */ = {
+		AC62900F2EE27F5A0026BB1C /* Build configuration list for PBXProject "LoopReminder" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AC62901D2EE27F5C0026BB1C /* Debug */,

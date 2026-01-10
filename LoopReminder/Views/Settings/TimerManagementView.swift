@@ -32,48 +32,51 @@ struct TimerManagementView: View {
             )
             
             // 内容区域 - 可滚动
-            ScrollView {
-                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                    // 添加计时器按钮
-                    addTimerButton
-                    
-                    // 计时器列表
-                    ForEach($settings.timers) { $timer in
-                        TimerItemCard(
-                            timer: $timer,
-                            isExpanded: Binding(
-                                get: { expandedTimerID == timer.id },
-                                set: { isExpanded in
-                                    withAnimation(.spring(response: 0.3)) {
-                                        if isExpanded {
-                                            expandedTimerID = timer.id
-                                            // 展开时设置为焦点
-                                            settings.focusedTimerID = timer.id
-                                        } else {
-                                            if expandedTimerID == timer.id {
-                                                expandedTimerID = nil
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                        // 添加计时器按钮
+                        addTimerButton
+                        
+                        // 计时器列表
+                        ForEach($settings.timers) { $timer in
+                            TimerItemCard(
+                                timer: $timer,
+                                isExpanded: Binding(
+                                    get: { expandedTimerID == timer.id },
+                                    set: { isExpanded in
+                                        withAnimation(.spring(response: 0.3)) {
+                                            if isExpanded {
+                                                expandedTimerID = timer.id
+                                                // 展开时设置为焦点
+                                                settings.focusedTimerID = timer.id
+                                            } else {
+                                                if expandedTimerID == timer.id {
+                                                    expandedTimerID = nil
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            ),
-                            isFocused: settings.focusedTimerID == timer.id,
-                            isRunning: settings.isRunning,
-                            onFocus: {
-                                settings.focusedTimerID = timer.id
-                            },
-                            onDelete: {
-                                deleteTimer(timer)
-                            },
-                            focusedField: $focusedField
-                        )
+                                ),
+                                isFocused: settings.focusedTimerID == timer.id,
+                                isRunning: settings.isRunning,
+                                onFocus: {
+                                    settings.focusedTimerID = timer.id
+                                },
+                                onDelete: {
+                                    deleteTimer(timer)
+                                },
+                                focusedField: $focusedField
+                            )
+                        }
+                        
+                        // 提示信息
+                        InfoHint("计时器的颜色配置会优先于\"通知样式\"页的全局颜色配置", color: .blue)
                     }
-                    
-                    // 提示信息
-                    InfoHint("计时器的颜色配置会优先于\"通知样式\"页的全局颜色配置", color: .blue)
+                    .padding(.bottom, DesignTokens.Spacing.xl)
+                    .padding(.trailing, DesignTokens.Spacing.xl)
+                    .frame(width: proxy.size.width - DesignTokens.Spacing.xl, alignment: .leading)
                 }
-                .padding(.bottom, DesignTokens.Spacing.xl)
-                .padding(.trailing, DesignTokens.Spacing.xl)
             }
         }
         .onAppear {
@@ -199,6 +202,7 @@ struct TimerItemCard: View {
             RoundedRectangle(cornerRadius: DesignTokens.Layout.cornerRadius)
                 .strokeBorder(isFocused ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 2)
         )
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
             timerID = timer.id // 初始化时保存ID
             initializeInputValues()
@@ -290,16 +294,20 @@ struct TimerItemCard: View {
             
             // 进度条
             if isTimerRunning {
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color.green.opacity(0.15))
-                        .frame(height: 3)
-                    
-                    Rectangle()
-                        .fill(Color.green)
-                        .frame(width: progressWidth, height: 3)
-                        .animation(.linear(duration: 0.3), value: progressValue)
+                GeometryReader { proxy in
+                    let clampedProgress = max(0, min(1.0, progressValue))
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color.green.opacity(0.15))
+                            .frame(height: 3)
+                        
+                        Rectangle()
+                            .fill(Color.green)
+                            .frame(width: proxy.size.width * clampedProgress, height: 3)
+                            .animation(.linear(duration: 0.3), value: clampedProgress)
+                    }
                 }
+                .frame(height: 3)
                 
                 if !countdownText.isEmpty {
                     HStack {
@@ -327,11 +335,6 @@ struct TimerItemCard: View {
     
     private var isTimerRunning: Bool {
         timer.isRunning
-    }
-    
-    private var progressWidth: CGFloat {
-        // 计算进度条宽度，根据父容器宽度
-        return 460 * progressValue // 假设容器宽度为 480 - 内边距
     }
     
     // MARK: - Expanded View
@@ -375,6 +378,7 @@ struct TimerItemCard: View {
                 SettingRow(icon: "textformat", iconColor: .green, title: "标题") {
                     TextField("通知标题（也作为计时器名称）", text: $timer.title)
                         .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: DesignTokens.Layout.formFieldMaxWidth)
                         .disabled(settings.isRunning)
                         .focused(focusedField, equals: .timerTitle(timer.id))
                 }
@@ -383,6 +387,7 @@ struct TimerItemCard: View {
                     TextField("通知内容", text: $timer.body, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
                         .lineLimit(2...5)
+                        .frame(maxWidth: DesignTokens.Layout.formFieldMaxWidth)
                         .disabled(settings.isRunning)
                         .focused(focusedField, equals: .timerBody(timer.id))
                 }
@@ -496,7 +501,7 @@ struct TimerItemCard: View {
                             Image(systemName: "trash.fill")
                             Text("删除此计时器")
                         }
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: DesignTokens.Layout.formFieldMaxWidth)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -508,7 +513,9 @@ struct TimerItemCard: View {
                 }
             }
             .padding(DesignTokens.Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     // MARK: - Color Config Section
@@ -551,11 +558,12 @@ struct TimerItemCard: View {
                             Text(colorType.rawValue).tag(colorType)
                         }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                     .disabled(settings.isRunning)
                     .onChange(of: selectedColorType) { _, newValue in
                         updateTimerColor(newValue)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     
                     if selectedColorType == .custom {
                         ColorPicker("自定义颜色", selection: $customColor)
