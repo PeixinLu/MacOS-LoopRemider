@@ -73,3 +73,4 @@
 感谢以下开源项目的支持：
 
 - [LaunchAtLogin-Modern](https://github.com/sindresorhus/LaunchAtLogin-Modern) - 优雅的开机启动管理库
+- [Sparkle](https://github.com/sparkle-project/Sparkle) - macOS 应用自动更新框架

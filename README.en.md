@@ -73,3 +73,4 @@
 Thanks for the support of the following open-source projects:
 
 - [LaunchAtLogin-Modern](https://github.com/sindresorhus/LaunchAtLogin-Modern) - An elegant library for managing launch at login
+- [Sparkle](https://github.com/sparkle-project/Sparkle) - macOS app automatic update framework
