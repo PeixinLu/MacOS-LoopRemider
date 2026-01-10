@@ -64,7 +64,6 @@ jobs:
             -configuration Release \
             -archivePath "$ARCHIVE_PATH" \
             MARKETING_VERSION="${{ steps.version.outputs.app_version }}" \
-            CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build_number }}" \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
             -allowProvisioningUpdates \
             clean archive
