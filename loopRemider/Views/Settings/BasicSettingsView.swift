@@ -1,10 +1,3 @@
-//
-//  BasicSettingsView.swift
-//  loopRemider
-//
-//  Created by 数源 on 2025/12/8.
-//
-
 import SwiftUI
 import LaunchAtLogin
 
@@ -36,28 +29,19 @@ struct BasicSettingsView: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             // 页面标题 - 固定
             PageHeader(
-                icon: "bell.badge.fill",
+                icon: "gear.fill",
                 iconColor: .blue,
-                title: "提醒设置",
-                subtitle: "自定义您的循环提醒"
+                title: "基本设置",
+                subtitle: "配置一些启动项"
             )
 
             // 内容区域 - 可滚动
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                    // 1. 通知内容
-                    notificationContentSection
-                    
-                    // 2. 通知频率
-                    notificationIntervalSection
-                    
-                    // 3. 休息一下
-                    restSection
-                    
-                    // 4. 启动设置
+                    // 1. 启动设置
                     launchSettingsSection
                     
-                    // 5. 通知方式
+                    // 2. 通知方式
                     notificationModeSection
                 }
                 .padding(.bottom, DesignTokens.Spacing.xl)

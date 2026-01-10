@@ -1,10 +1,3 @@
-//
-//  EventLogger.swift
-//  loopRemider
-//
-//  Created by 数源 on 2025/12/8.
-//
-
 import Foundation
 import AppKit
 

@@ -1,10 +1,3 @@
-//
-//  LogsView.swift
-//  loopRemider
-//
-//  Created by 数源 on 2025/12/8.
-//
-
 import SwiftUI
 
 struct LogsView: View {
@@ -48,7 +41,8 @@ struct LogsView: View {
                 }
                 .buttonStyle(.bordered)
             }
-            
+            .padding(.trailing, DesignTokens.Spacing.lg)
+
             // 日志内容 - 可滚动
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {

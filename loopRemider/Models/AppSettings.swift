@@ -1,10 +1,3 @@
-//
-//  AppSettings.swift
-//  loopRemider
-//
-//  Created by 数源 on 2025/12/8.
-//
-
 import SwiftUI
 import Combine
 import Foundation
@@ -132,6 +125,10 @@ final class AppSettings: ObservableObject {
         // 新增：休息一下
         static let isRestEnabled = "isRestEnabled"
         static let restSeconds = "restSeconds"
+        
+        // 新增：多计时器
+        static let timers = "timers"
+        static let focusedTimerID = "focusedTimerID"
     }
 
     private let defaults = UserDefaults.standard
@@ -179,6 +176,10 @@ final class AppSettings: ObservableObject {
     // 静默启动设置（开机启动由 LaunchAtLogin 包管理）
     @Published var silentLaunch: Bool
     @Published var resetOnWakeEnabled: Bool
+    
+    // 多计时器支持
+    @Published var timers: [TimerItem]
+    @Published var focusedTimerID: UUID?
     
     enum NotificationMode: String, CaseIterable {
         case overlay = "屏幕遮罩"
@@ -283,6 +284,32 @@ final class AppSettings: ObservableObject {
         // Load - 静默启动设置（开机启动由 LaunchAtLogin 包管理）
         self.silentLaunch = defaults.object(forKey: Keys.silentLaunch) as? Bool ?? false
         self.resetOnWakeEnabled = defaults.object(forKey: Keys.resetOnWake) as? Bool ?? config.system.resetOnWake
+        
+        // Load - 多计时器
+        if let timersData = defaults.data(forKey: Keys.timers),
+           let decodedTimers = try? JSONDecoder().decode([TimerItem].self, from: timersData),
+           !decodedTimers.isEmpty {
+            self.timers = decodedTimers
+        } else {
+            // 默认创建一个计时器，使用旧的配置迁移过来
+            let defaultTimer = TimerItem(
+                emoji: defaults.string(forKey: Keys.notifEmoji) ?? config.notification.emoji,
+                title: defaults.string(forKey: Keys.notifTitle) ?? config.notification.title,
+                body: defaults.string(forKey: Keys.notifBody) ?? config.notification.body,
+                intervalSeconds: defaults.object(forKey: Keys.intervalSeconds) as? Double ?? config.interval.default,
+                isRestEnabled: defaults.object(forKey: Keys.isRestEnabled) as? Bool ?? config.rest.enabled,
+                restSeconds: defaults.object(forKey: Keys.restSeconds) as? Double ?? config.rest.default,
+                customColor: nil,
+                lastFireEpoch: defaults.object(forKey: Keys.lastFire) as? Double ?? 0
+            )
+            self.timers = [defaultTimer]
+        }
+        
+        if let focusedIDString = defaults.string(forKey: Keys.focusedTimerID) {
+            self.focusedTimerID = UUID(uuidString: focusedIDString)
+        } else {
+            self.focusedTimerID = timers.first?.id
+        }
 
         // Persist changes - 基本设置
         $isRunning.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.isRunning) }.store(in: &cancellables)
@@ -330,6 +357,17 @@ final class AppSettings: ObservableObject {
         // Persist changes - 静默启动设置
         $silentLaunch.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.silentLaunch) }.store(in: &cancellables)
         $resetOnWakeEnabled.dropFirst().sink { [weak self] in self?.defaults.set($0, forKey: Keys.resetOnWake) }.store(in: &cancellables)
+        
+        // Persist changes - 多计时器
+        $timers.dropFirst().sink { [weak self] timers in
+            if let encoded = try? JSONEncoder().encode(timers) {
+                self?.defaults.set(encoded, forKey: Keys.timers)
+            }
+        }.store(in: &cancellables)
+        
+        $focusedTimerID.dropFirst().sink { [weak self] id in
+            self?.defaults.set(id?.uuidString, forKey: Keys.focusedTimerID)
+        }.store(in: &cancellables)
 
         // Guardrail: 5秒到2小时
         if intervalSeconds < config.interval.min { intervalSeconds = config.interval.min }

@@ -1,10 +1,3 @@
-//
-//  SettingsView.swift
-//  loopRemider
-//
-//  Created by 数源 on 2025/12/8.
-//
-
 import SwiftUI
 import Combine
 
@@ -15,7 +8,7 @@ struct SettingsView: View {
     @State private var sendingTest = false
     @State private var inputValue: String = ""
     @State private var selectedUnit: BasicSettingsView.TimeUnit = .minutes
-    @State private var selectedCategory: SettingsCategory = .basic
+    @State private var selectedCategory: SettingsCategory = .timers
     @State private var countdownText: String = ""
     @State private var progressValue: Double = 0.0
     @State private var isResting: Bool = false
@@ -24,9 +17,10 @@ struct SettingsView: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     enum SettingsCategory: String, CaseIterable, Identifiable {
-        case basic = "基本设置"
-        case style = "通知样式"
+        case timers = "计时器"
+        case style = "通用外观"
         case animation = "动画和定位"
+        case basic = "基本设置"
         case logs = "日志"
         case update = "检查更新"
         case about = "关于"
@@ -35,9 +29,10 @@ struct SettingsView: View {
         
         var icon: String {
             switch self {
-            case .basic: return "bell.badge.fill"
-            case .style: return "paintbrush.pointed.fill"
+            case .timers: return "bell.badge.fill"
+            case .style: return "paintbrush.fill"
             case .animation: return "wand.and.stars"
+            case .basic: return "gear"
             case .logs: return "doc.text.magnifyingglass"
             case .update: return "arrow.down.circle"
             case .about: return "info.circle.fill"
@@ -46,18 +41,33 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        NavigationSplitView(columnVisibility: .constant(.all)) {
-            // 左侧导航栏
-            List(SettingsCategory.allCases, selection: $selectedCategory) { category in
-                Label(category.rawValue, systemImage: category.icon)
-                    .tag(category)
+        HStack(spacing: 0) {
+            // 左侧固定宽度的侧边栏
+            VStack(spacing: 0) {
+                List(SettingsCategory.allCases, selection: $selectedCategory) { category in
+                    Label(category.rawValue, systemImage: category.icon)
+                        .tag(category)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 6)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                }
+                .listStyle(.sidebar)
+                .scrollContentBackground(.hidden)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .padding(.top, 8)
+                .padding(.leading, 6)
             }
-            .navigationSplitViewColumnWidth(160)
-            .listStyle(.sidebar)
-            .toolbar(removing: .sidebarToggle)
-        } detail: {
+            .frame(width: 170)
+            .background(Color(nsColor: .controlBackgroundColor))
+            
+            // 分隔线
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor))
+                .frame(width: 1)
+                .frame(maxHeight: .infinity)
+            
             // 右侧内容区 - 水平布局
-            HStack(alignment: .top, spacing: DesignTokens.Spacing.xxl) {
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.lg) {
                 // 左侧：表单区域（各页面内部处理滚动）
                 Group {
                     switch selectedCategory {
@@ -66,6 +76,8 @@ struct SettingsView: View {
                             inputValue: $inputValue,
                             selectedUnit: $selectedUnit
                         )
+                    case .timers:
+                        TimerManagementView()
                     case .style:
                         StyleSettingsView()
                     case .animation:
@@ -78,8 +90,8 @@ struct SettingsView: View {
                         AboutView()
                     }
                 }
-                .padding(.leading, DesignTokens.Spacing.xxl)
-                .frame(width: shouldShowPreview ? 480 : nil)
+                .padding(.leading, DesignTokens.Spacing.lg)
+                .frame(width: shouldShowPreview ? 390 : nil)
                 .frame(maxWidth: shouldShowPreview ? nil : .infinity)
                 
                 // 右侧：预览区域
@@ -88,16 +100,20 @@ struct SettingsView: View {
                         sendingTest: $sendingTest,
                         countdownText: $countdownText,
                         progressValue: $progressValue,
-                        isResting: $isResting
+                        isResting: $isResting,
+                        showTimerList: selectedCategory != .timers,
+                        onNavigateToTimers: {
+                            selectedCategory = .timers
+                        }
                     )
-                    .frame(width: 400)
-                    .padding(.top, DesignTokens.Spacing.xxl)
-                    .padding(.trailing, DesignTokens.Spacing.xxl)
+                    .frame(width: 340)
+                    .padding(.top, DesignTokens.Spacing.lg)
+                    .padding(.trailing, DesignTokens.Spacing.lg)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: 1080, height: 680)
+        .frame(width: 960, height: 680)
         .onAppear {
             initializeInputValue()
             if settings.isRunning {
@@ -118,6 +134,7 @@ struct SettingsView: View {
     
     /// 是否显示预览区域
     private var shouldShowPreview: Bool {
+        // 在所有页面显示预览（除了关于、更新、日志页面）
         selectedCategory != .about && selectedCategory != .update && selectedCategory != .logs
     }
     

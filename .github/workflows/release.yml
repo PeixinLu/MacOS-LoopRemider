@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  SPARKLE_VERSION: "2.8.1"
+
+jobs:
+  release:
+    runs-on: macos-26
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: |
+          set -euo pipefail
+          if [ -d "/Applications/Xcode.app" ]; then
+            XCODE_APP="Xcode.app"
+          else
+            XCODE_APP=$(ls /Applications | grep -E '^Xcode.*\.app$' | sort -V | tail -1 || true)
+          fi
+          if [ -z "${XCODE_APP:-}" ]; then
+            echo "No Xcode.app found in /Applications" >&2
+            ls -la /Applications >&2
+            exit 1
+          fi
+          echo "Using Xcode app: $XCODE_APP"
+          sudo xcode-select -s "/Applications/$XCODE_APP/Contents/Developer"
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Derive version from tag
+        id: version
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME#v}"
+          echo "app_version=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "build_number=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Build archive
+        run: |
+          set -euo pipefail
+          ARCHIVE_PATH="$PWD/build/LoopReminder.xcarchive"
+          xcodebuild -project loopRemider.xcodeproj \
+            -scheme LoopReminder \
+            -configuration Release \
+            -archivePath "$ARCHIVE_PATH" \
+            MARKETING_VERSION="${{ steps.version.outputs.app_version }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build_number }}" \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            -allowProvisioningUpdates \
+            clean archive
+
+      - name: Ad-hoc sign app
+        run: |
+          set -euo pipefail
+          APP_PATH="$PWD/build/LoopReminder.xcarchive/Products/Applications/LoopReminder.app"
+          codesign -s "-" --force --deep --timestamp=none --options runtime --entitlements loopRemider/loopRemider.entitlements "$APP_PATH"
+          codesign -vvv --deep --strict "$APP_PATH"
+
+      - name: Zip app
+        run: |
+          APP_PATH="$PWD/build/LoopReminder.xcarchive/Products/Applications/LoopReminder.app"
+          if [ ! -f "$APP_PATH/Contents/Info.plist" ]; then
+            echo "Info.plist not found at $APP_PATH" >&2
+            find "$PWD/build" -maxdepth 3 -type f -name Info.plist -print
+            exit 1
+          fi
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist" || { plutil -p "$APP_PATH/Contents/Info.plist"; exit 1; }
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP_PATH/Contents/Info.plist" || { plutil -p "$APP_PATH/Contents/Info.plist"; exit 1; }
+          codesign -s "-" --force --deep --timestamp=none "$APP_PATH"
+          codesign -vvv --deep --strict "$APP_PATH"
+          codesign -dv --verbose=4 "$APP_PATH" 2>&1 | egrep "flags=|Signature=|TeamIdentifier="
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$PWD/artifacts/LoopReminder.zip"
+          ls -lh "$PWD/artifacts/LoopReminder.zip"
+
+      - name: Download Sparkle tools
+        run: |
+          set -euo pipefail
+          curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" -o sparkle.tar.xz
+          tar -xf sparkle.tar.xz
+          SPARKLE_DIR=$(tar -tf sparkle.tar.xz | head -1 | cut -d/ -f1 | tr -d '/')
+          echo "Detected Sparkle dir: $SPARKLE_DIR"
+          ls -la "$SPARKLE_DIR"
+          SPARKLE_BIN="$PWD/$SPARKLE_DIR/bin"
+          if [ ! -x "$SPARKLE_BIN/generate_appcast" ]; then
+            FOUND=$(find "$SPARKLE_DIR" -type f -name generate_appcast | head -1 || true)
+            if [ -z "${FOUND:-}" ]; then
+              echo "generate_appcast not found in Sparkle package" >&2
+              exit 1
+            fi
+            SPARKLE_BIN="$PWD/$(dirname "$FOUND")"
+          fi
+          ls -la "$SPARKLE_BIN"
+          echo "SPARKLE_BIN=$SPARKLE_BIN" >> "$GITHUB_ENV"
+
+      - name: Prepare Sparkle private key
+        env:
+          SPARKLE_ED25519_PRIVATE_KEY: ${{ secrets.SPARKLE_ED25519_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SPARKLE_ED25519_PRIVATE_KEY:-}" ]; then
+            echo "Secret SPARKLE_ED25519_PRIVATE_KEY is required" >&2
+            exit 1
+          fi
+          printf '%s' "$SPARKLE_ED25519_PRIVATE_KEY" > sparkle_private_key.pem
+          chmod 600 sparkle_private_key.pem
+
+      - name: Generate appcast
+        run: |
+          set -euo pipefail
+          TAG_NAME="${{ steps.version.outputs.tag_name }}"
+          ZIP_NAME="LoopReminder.zip"
+          DOWNLOAD_PREFIX="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/"
+          echo "Using tag: $TAG_NAME"
+          echo "Download prefix: $DOWNLOAD_PREFIX"
+          if [[ "$DOWNLOAD_PREFIX" != *"/${TAG_NAME}/" ]]; then
+            echo "Download prefix missing tag" >&2
+            exit 1
+          fi
+          cd artifacts
+          "$SPARKLE_BIN/generate_appcast" --ed-key-file ../sparkle_private_key.pem --download-url-prefix "$DOWNLOAD_PREFIX" .
+          rm -f ../sparkle_private_key.pem
+          ls -lh "$ZIP_NAME" appcast.xml
+          if ! grep -q "releases/download/${TAG_NAME}/${ZIP_NAME}" appcast.xml; then
+            echo "Appcast enclosure URL does not point to releases/download/${TAG_NAME}/${ZIP_NAME}" >&2
+            cat appcast.xml
+            exit 1
+          fi
+          cat appcast.xml
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: "Automated release for ${{ github.ref_name }}"
+          files: |
+            artifacts/LoopReminder.zip
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload appcast to Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Deploy appcast to Pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v4

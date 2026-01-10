@@ -1,10 +1,3 @@
-//
-//  StyleSettingsView.swift
-//  loopRemider
-//
-//  Created by 数源 on 2025/12/8.
-//
-
 import SwiftUI
 
 struct StyleSettingsView: View {
@@ -14,9 +7,9 @@ struct StyleSettingsView: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
             // 页面标题 - 固定
             PageHeader(
-                icon: "paintbrush.pointed.fill",
+                icon: "paintbrush.fill",
                 iconColor: .pink,
-                title: "通知样式",
+                title: "通用外观",
                 subtitle: "自定义屏幕遮罩通知外观"
             )
             
