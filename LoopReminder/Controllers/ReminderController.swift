@@ -16,6 +16,7 @@ final class ReminderController: ObservableObject {
     // 多通知管理
     private var overlayWindows: [UUID: NSPanel] = [:] // 每个计时器的通知窗口
     private var notificationOrder: [UUID] = [] // 通知显示顺序（从上到下）
+    private var windowScreens: [UUID: NSScreen] = [:] // 记录每个窗口所在的屏幕
     
     private let center = UNUserNotificationCenter.current()
     private var overlayWindow: NSPanel?  // 使用 NSPanel 替代 NSWindow 以支持全屏模式
@@ -31,10 +32,9 @@ final class ReminderController: ObservableObject {
     }
     
     deinit {
-        Task { @MainActor in
-            self.removeLockObservers()
-        }
+        cleanupObservers()
     }
+    
     private struct OverlayStyle {
         let backgroundColor: Color
         let backgroundOpacity: Double
@@ -182,20 +182,26 @@ final class ReminderController: ObservableObject {
         
         // 关闭该计时器的通知弹窗（如果有）
         if let window = overlayWindows[timerID] {
-            window.alphaValue = 0
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak window] in
-                window?.orderOut(nil)
-                window?.close()
-            }
+            // 从字典和顺序中移除
             overlayWindows.removeValue(forKey: timerID)
+            windowScreens.removeValue(forKey: timerID)
             
-            // 从顺序中移除
             if let index = notificationOrder.firstIndex(of: timerID) {
                 notificationOrder.remove(at: index)
             }
             
-            // 重新布局其他通知
+            // 立即重新布局其他通知
             relayoutNotifications(settings: settings)
+            
+            // 然后关闭窗口（使用渐隐动画）
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.2
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                window.animator().alphaValue = 0
+            }, completionHandler: { [weak window] in
+                window?.orderOut(nil)
+                window?.close()
+            })
         }
         
         if let timerName = settings.timers.first(where: { $0.id == timerID })?.displayName {
@@ -447,6 +453,19 @@ final class ReminderController: ObservableObject {
         }
     }
     
+    nonisolated private func cleanupObservers() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let center = DistributedNotificationCenter.default()
+            if let observer = self.lockObserver {
+                center.removeObserver(observer)
+            }
+            if let observer = self.unlockObserver {
+                center.removeObserver(observer)
+            }
+        }
+    }
+    
     private func handleUnlock() {
         guard let settings = settingsRef, settings.resetOnWakeEnabled else { return }
         guard let lockDate = lastLockDate else { return }
@@ -508,11 +527,22 @@ final class ReminderController: ObservableObject {
     private func showOverlayNotification(timer: TimerItem, settings: AppSettings, content: NotificationContent, style: OverlayStyle, triggerRestOnDismiss: Bool) {
         // 关闭该计时器的旧通知（同个计时器的通知会覆盖）
         if let existingWindow = overlayWindows[timer.id] {
-            existingWindow.close()
+            // 立即从字典和顺序中移除，防止新通知计算位置时把旧窗口算进去
             overlayWindows.removeValue(forKey: timer.id)
-            // 从顺序中移除
+            windowScreens.removeValue(forKey: timer.id)
+            
             if let index = notificationOrder.firstIndex(of: timer.id) {
                 notificationOrder.remove(at: index)
+            }
+            
+            // 立即关闭旧窗口（不等待、不动画，直接关闭）
+            existingWindow.alphaValue = 0
+            existingWindow.orderOut(nil)
+            existingWindow.close()
+            
+            // 重新布局其他通知（如果有的话）
+            if !overlayWindows.isEmpty {
+                relayoutNotifications(settings: settings)
             }
         }
         
@@ -547,11 +577,32 @@ final class ReminderController: ObservableObject {
         let verticalSpacing: CGFloat = 12 // 通知之间的间隔
         var totalOffset: CGFloat = 0
         
-        // 计算已有通知的总高度
+        // 计算已有通知的总高度（只计算在同一屏幕上的通知）
         for existingTimerID in notificationOrder {
-            if overlayWindows[existingTimerID] != nil {
+            if let existingWindow = overlayWindows[existingTimerID],
+               windowScreens[existingTimerID] === screen {
                 totalOffset += windowHeight + verticalSpacing
             }
+        }
+        
+        // 检查是否会超出屏幕边界
+        let maxOffset: CGFloat
+        switch style.position {
+        case .topLeft, .topRight, .topCenter:
+            // 从上往下堆叠，检查下边界
+            maxOffset = screenFrame.height - windowHeight - padding * 2
+        case .bottomLeft, .bottomRight, .bottomCenter:
+            // 从下往上堆叠，检查上边界
+            maxOffset = screenFrame.height - windowHeight - padding * 2
+        case .center:
+            // 中心堆叠，检查上边界
+            maxOffset = (screenFrame.height / 2) - padding
+        }
+        
+        // 如果超出边界，限制偏移量
+        if totalOffset > maxOffset {
+            totalOffset = maxOffset
+            logger.log("⚠️ 通知数量过多，部分通知可能重叠")
         }
         
         // 窗口尺寸包含缓冲区
@@ -674,23 +725,29 @@ final class ReminderController: ObservableObject {
             onDismiss: { [weak self, weak window, timerID = timer.id] isUserDismiss in
                 Task {
                     guard let self, let w = window else { return }
-                    // 检查是否是该计时器的窗口
+                    // 检查是否是该计时器的窗口（防止处理已被替换的旧窗口）
                     if let current = self.overlayWindows[timerID], current === w {
-                        // 优雅窗口关闭，防止闪烁
-                        w.alphaValue = 0 // 先设置不透明度为0，立即隐藏
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak w] in
-                            w?.orderOut(nil)
-                            w?.close()
-                        }
+                        // 从字典和顺序中移除（先移除再关闭，确保重新布局时不会计算它）
                         self.overlayWindows.removeValue(forKey: timerID)
                         
-                        // 从顺序中移除
                         if let index = self.notificationOrder.firstIndex(of: timerID) {
                             self.notificationOrder.remove(at: index)
                         }
                         
-                        // 重新布局其他通知（上移占据位置）
+                        self.windowScreens.removeValue(forKey: timerID)
+                        
+                        // 立即重新布局其他通知（带动画的上移）
                         self.relayoutNotifications(settings: settings)
+                        
+                        // 然后关闭窗口（使用渐隐动画）
+                        NSAnimationContext.runAnimationGroup({ context in
+                            context.duration = 0.2
+                            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                            w.animator().alphaValue = 0
+                        }, completionHandler: { [weak w] in
+                            w?.orderOut(nil)
+                            w?.close()
+                        })
                         
                         // 只有用户手动关闭通知时才触发休息机制
                         if triggerRestOnDismiss && isUserDismiss && timer.isRestEnabled {
@@ -702,9 +759,15 @@ final class ReminderController: ObservableObject {
                             // 开始休息
                             self.scheduleRestTimer(for: timerID, timerItem: timer, settings: settings)
                         }
+                    } else {
+                        // 该窗口已被新窗口替换，仅需关闭它，不做其他处理
+                        w.alphaValue = 0
+                        w.orderOut(nil)
+                        w.close()
                     }
+                    
                     // 兼容旧的单窗口模式
-                    else if let current = self.overlayWindow, current === w {
+                    if let current = self.overlayWindow, current === w {
                         w.alphaValue = 0
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak w] in
                             w?.orderOut(nil)
@@ -723,50 +786,79 @@ final class ReminderController: ObservableObject {
         // 添加到窗口字典和顺序列表
         self.overlayWindows[timer.id] = window
         self.notificationOrder.append(timer.id)
+        self.windowScreens[timer.id] = screen // 记录窗口所在的屏幕
     }
     
     // 重新布局所有通知（当有通知消失时，其他通知上移）
     private func relayoutNotifications(settings: AppSettings) {
-        guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
-        let screenFrame = screen.visibleFrame
-        
         let windowHeight: CGFloat = settings.overlayHeight
         let padding: CGFloat = settings.overlayEdgePadding
         let verticalSpacing: CGFloat = 12
-        let buffer: CGFloat = 100
         
-        var currentOffset: CGFloat = 0
+        // 按屏幕分组重新布局
+        var screenGroups: [NSScreen: [UUID]] = [:]
         
-        // 按顺序重新布局每个通知
-        for (index, timerID) in notificationOrder.enumerated() {
-            guard let window = overlayWindows[timerID] else { continue }
+        for timerID in notificationOrder {
+            guard let window = overlayWindows[timerID],
+                  let screen = windowScreens[timerID] else { continue }
             
-            let expandedWidth = window.frame.width
-            let expandedHeight = window.frame.height
+            if screenGroups[screen] == nil {
+                screenGroups[screen] = []
+            }
+            screenGroups[screen]?.append(timerID)
+        }
+        
+        // 为每个屏幕分别布局
+        for (screen, timerIDs) in screenGroups {
+            let screenFrame = screen.visibleFrame
+            var currentOffset: CGFloat = 0
             
-            var newFrame = window.frame
-            
-            // 根据位置设置计算新位置
+            // 计算最大允许偏移（避免超出屏幕）
+            let maxOffset: CGFloat
             switch settings.overlayPosition {
             case .topLeft, .topRight, .topCenter:
-                // 从上往下堆叠
-                newFrame.origin.y = screenFrame.maxY - expandedHeight - padding - currentOffset
+                maxOffset = screenFrame.height - windowHeight - padding * 2
             case .bottomLeft, .bottomRight, .bottomCenter:
-                // 从下往上堆叠
-                newFrame.origin.y = screenFrame.minY + padding + currentOffset
+                maxOffset = screenFrame.height - windowHeight - padding * 2
             case .center:
-                // 中心向上堆叠
-                newFrame.origin.y = screenFrame.midY - expandedHeight / 2 - currentOffset
+                maxOffset = (screenFrame.height / 2) - padding
             }
             
-            // 带动画的移动窗口
-            NSAnimationContext.runAnimationGroup({ context in
-                context.duration = 0.25
-                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                window.animator().setFrame(newFrame, display: true)
-            })
-            
-            currentOffset += windowHeight + verticalSpacing
+            // 按顺序重新布局每个通知
+            for timerID in timerIDs {
+                guard let window = overlayWindows[timerID] else { continue }
+                
+                // 检查是否超出边界
+                if currentOffset > maxOffset {
+                    // 超出边界的通知保持在边界内（可能重叠）
+                    currentOffset = maxOffset
+                }
+                
+                let expandedHeight = window.frame.height
+                var newFrame = window.frame
+                
+                // 根据位置设置计算新位置
+                switch settings.overlayPosition {
+                case .topLeft, .topRight, .topCenter:
+                    // 从上往下堆叠
+                    newFrame.origin.y = screenFrame.maxY - expandedHeight - padding - currentOffset
+                case .bottomLeft, .bottomRight, .bottomCenter:
+                    // 从下往上堆叠
+                    newFrame.origin.y = screenFrame.minY + padding + currentOffset
+                case .center:
+                    // 中心向上堆叠
+                    newFrame.origin.y = screenFrame.midY - expandedHeight / 2 - currentOffset
+                }
+                
+                // 带动画的移动窗口
+                NSAnimationContext.runAnimationGroup({ context in
+                    context.duration = 0.25
+                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                    window.animator().setFrame(newFrame, display: true)
+                })
+                
+                currentOffset += windowHeight + verticalSpacing
+            }
         }
     }
     
@@ -778,6 +870,7 @@ final class ReminderController: ObservableObject {
         }
         overlayWindows.removeAll()
         notificationOrder.removeAll()
+        windowScreens.removeAll()
         
         // 兼容旧的单窗口模式
         if let window = overlayWindow {
