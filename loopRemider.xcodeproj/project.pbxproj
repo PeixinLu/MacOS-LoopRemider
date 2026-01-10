@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		965103062F123099002AEE46 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 965103052F123099002AEE46 /* Sparkle */; };
 		AC45010A2EE96FC30037C74C /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = AC4501092EE96FC30037C74C /* LaunchAtLogin */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +42,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AC45010A2EE96FC30037C74C /* LaunchAtLogin in Frameworks */,
+				965103062F123099002AEE46 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +86,7 @@
 			name = loopRemider;
 			packageProductDependencies = (
 				AC4501092EE96FC30037C74C /* LaunchAtLogin */,
+				965103052F123099002AEE46 /* Sparkle */,
 			);
 			productName = loopRemider;
 			productReference = AC6290142EE27F5A0026BB1C /* loopRemider.app */;
@@ -115,6 +118,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AC4501082EE96FC30037C74C /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+				965103042F123099002AEE46 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AC6290152EE27F5A0026BB1C /* Products */;
@@ -357,6 +361,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		965103042F123099002AEE46 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.1;
+			};
+		};
 		AC4501082EE96FC30037C74C /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
@@ -368,6 +380,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		965103052F123099002AEE46 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 965103042F123099002AEE46 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		AC4501092EE96FC30037C74C /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AC4501082EE96FC30037C74C /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
