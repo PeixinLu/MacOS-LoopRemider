@@ -19,6 +19,8 @@ struct TimerManagementView: View {
         case timerEmoji(UUID)
         case timerTitle(UUID)
         case timerBody(UUID)
+        case timerInterval(UUID)
+        case timerRest(UUID)
     }
     
     var body: some View {
@@ -68,6 +70,7 @@ struct TimerManagementView: View {
                                 },
                                 focusedField: $focusedField
                             )
+                            .id(timer.id) // 添加 id 修饰符，确保计时器更新时视图刷新
                         }
                         
                         // 提示信息
@@ -83,6 +86,15 @@ struct TimerManagementView: View {
             // 默认焦点在第一个计时器
             if settings.focusedTimerID == nil, let firstTimer = settings.timers.first {
                 settings.focusedTimerID = firstTimer.id
+            }
+        }
+        .onChange(of: settings.focusedTimerID) { oldID, newID in
+            // 焦点计时器变化时，延迟一帧确保 UI 刷新
+            if oldID != newID {
+                DispatchQueue.main.async {
+                    // 强制触发 UI 更新
+                    self.settings.objectWillChange.send()
+                }
             }
         }
     }
@@ -168,6 +180,11 @@ struct TimerItemCard: View {
     @State private var countdownText: String = ""
     @State private var progressValue: Double = 0.0
     @State private var timerID: UUID = UUID() // 保存计时器ID，避免访问已删除的timer对象
+    @State private var needsSave: Bool = false // 标记是否有未保存的修改
+    @State private var isIntervalFocused: Bool = false // 间隔输入框是否有焦点
+    @State private var isRestFocused: Bool = false // 休息输入框是否有焦点
+    @State private var intervalValidationMessage: String? = nil // 间隔验证消息
+    @State private var restValidationMessage: String? = nil // 休息验证消息
     
     private let timer2 = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
@@ -207,6 +224,26 @@ struct TimerItemCard: View {
             timerID = timer.id // 初始化时保存ID
             initializeInputValues()
             initializeColorSelection()
+        }
+        .onDisappear {
+            // 组件消失时（例如切换到其他计时器），立即保存未保存的修改
+            if needsSave {
+                // 立即保存，不等待异步
+                saveIntervalIfNeeded()
+                saveRestIntervalIfNeeded()
+                
+                // 强制触发 settings 更新，确保 UI 刷新
+                settings.objectWillChange.send()
+            }
+        }
+        .onChange(of: isExpanded) { _, newValue in
+            // 收起时保存修改
+            if !newValue && needsSave {
+                saveIntervalIfNeeded()
+                saveRestIntervalIfNeeded()
+                // 强制触发 settings 更新
+                settings.objectWillChange.send()
+            }
         }
     }
     
@@ -398,20 +435,27 @@ struct TimerItemCard: View {
                     VStack(alignment: .trailing, spacing: 6) {
                         HStack(spacing: 6) {
                             TextField("间隔", text: $intervalInputValue, onEditingChanged: { isEditing in
+                                isIntervalFocused = isEditing
                                 if !isEditing {
-                                    validateAndUpdateInterval()
+                                    saveIntervalIfNeeded()
                                 }
                             })
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 50)
                             .disabled(settings.isRunning)
+                            .focused(focusedField, equals: .timerInterval(timer.id))
                             .onSubmit {
-                                validateAndUpdateInterval()
+                                saveIntervalIfNeeded()
                             }
                             .onChange(of: intervalInputValue) { _, newValue in
                                 let filtered = newValue.filter { "0123456789.".contains($0) }
                                 if filtered != newValue {
                                     intervalInputValue = filtered
+                                } else {
+                                    // 标记有修改，需要保存
+                                    needsSave = true
+                                    // 实时验证
+                                    updateIntervalValidation()
                                 }
                             }
                             
@@ -424,14 +468,23 @@ struct TimerItemCard: View {
                             .frame(width: 100)
                             .disabled(settings.isRunning)
                             .onChange(of: intervalSelectedUnit) { _, _ in
-                                validateAndUpdateInterval()
+                                updateIntervalValidation()
+                                saveIntervalIfNeeded()
                             }
                         }
                         
+                        // 显示格式化后的时间
                         Text(timer.formattedInterval())
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundStyle(.blue)
+                        
+                        // 显示验证消息
+                        if let message = intervalValidationMessage {
+                            Text(message)
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
                     }
                 }
                 
@@ -452,20 +505,27 @@ struct TimerItemCard: View {
                         VStack(alignment: .trailing, spacing: 6) {
                             HStack(spacing: 6) {
                                 TextField("时长", text: $restInputValue, onEditingChanged: { isEditing in
+                                    isRestFocused = isEditing
                                     if !isEditing {
-                                        validateAndUpdateRestInterval()
+                                        saveRestIntervalIfNeeded()
                                     }
                                 })
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 50)
                                 .disabled(settings.isRunning)
+                                .focused(focusedField, equals: .timerRest(timer.id))
                                 .onSubmit {
-                                    validateAndUpdateRestInterval()
+                                    saveRestIntervalIfNeeded()
                                 }
                                 .onChange(of: restInputValue) { _, newValue in
                                     let filtered = newValue.filter { "0123456789.".contains($0) }
                                     if filtered != newValue {
                                         restInputValue = filtered
+                                    } else {
+                                        // 标记有修改，需要保存
+                                        needsSave = true
+                                        // 实时验证
+                                        updateRestValidation()
                                     }
                                 }
                                 
@@ -478,14 +538,23 @@ struct TimerItemCard: View {
                                 .frame(width: 100)
                                 .disabled(settings.isRunning)
                                 .onChange(of: restSelectedUnit) { _, _ in
-                                    validateAndUpdateRestInterval()
+                                    updateRestValidation()
+                                    saveRestIntervalIfNeeded()
                                 }
                             }
                             
+                            // 显示格式化后的时间
                             Text(timer.formattedRestInterval())
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundStyle(.purple)
+                            
+                            // 显示验证消息
+                            if let message = restValidationMessage {
+                                Text(message)
+                                    .font(.caption2)
+                                    .foregroundStyle(.orange)
+                            }
                         }
                     }
                 }
@@ -619,9 +688,50 @@ struct TimerItemCard: View {
         }
     }
     
-    private func validateAndUpdateInterval() {
+    /// 更新间隔验证消息
+    private func updateIntervalValidation() {
+        guard let value = Double(intervalInputValue), value > 0 else {
+            intervalValidationMessage = nil
+            return
+        }
+        
+        let seconds = value * intervalSelectedUnit.multiplier
+        
+        if seconds < 5 {
+            intervalValidationMessage = "⚠️ 最小值为5秒，将自动调整"
+        } else if seconds > 7200 {
+            intervalValidationMessage = "⚠️ 最大值为2小时，将自动调整"
+        } else {
+            intervalValidationMessage = nil
+        }
+    }
+    
+    /// 更新休息验证消息
+    private func updateRestValidation() {
+        guard let value = Double(restInputValue), value > 0 else {
+            restValidationMessage = nil
+            return
+        }
+        
+        let seconds = value * restSelectedUnit.multiplier
+        
+        if seconds < 5 {
+            restValidationMessage = "⚠️ 最小值为5秒，将自动调整"
+        } else if seconds > 7200 {
+            restValidationMessage = "⚠️ 最大值为2小时，将自动调整"
+        } else {
+            restValidationMessage = nil
+        }
+    }
+    
+    /// 保存间隔时间（如果有修改）
+    private func saveIntervalIfNeeded() {
+        guard needsSave else { return }
+        
         guard let value = Double(intervalInputValue), value > 0 else {
             initializeInputValues()
+            intervalValidationMessage = nil
+            needsSave = false
             return
         }
         
@@ -629,13 +739,34 @@ struct TimerItemCard: View {
         if seconds < 5 { seconds = 5 }
         if seconds > 7200 { seconds = 7200 }
         
+        // 更新计时器值
         timer.intervalSeconds = seconds
+        
+        // 立即刷新显示
         initializeInputValues()
+        intervalValidationMessage = nil // 保存后清除验证消息
+        needsSave = false
+        
+        // 强制触发父级 settings 对象的更新通知
+        DispatchQueue.main.async {
+            self.settings.objectWillChange.send()
+        }
     }
     
-    private func validateAndUpdateRestInterval() {
+    /// 验证并更新间隔时间（保留兼容性）
+    private func validateAndUpdateInterval() {
+        needsSave = true
+        saveIntervalIfNeeded()
+    }
+    
+    /// 保存休息时间（如果有修改）
+    private func saveRestIntervalIfNeeded() {
+        guard needsSave else { return }
+        
         guard let value = Double(restInputValue), value > 0 else {
             initializeInputValues()
+            restValidationMessage = nil
+            needsSave = false
             return
         }
         
@@ -643,8 +774,24 @@ struct TimerItemCard: View {
         if seconds < 5 { seconds = 5 }
         if seconds > 7200 { seconds = 7200 }
         
+        // 更新计时器值
         timer.restSeconds = seconds
+        
+        // 立即刷新显示
         initializeInputValues()
+        restValidationMessage = nil // 保存后清除验证消息
+        needsSave = false
+        
+        // 强制触发父级 settings 对象的更新通知
+        DispatchQueue.main.async {
+            self.settings.objectWillChange.send()
+        }
+    }
+    
+    /// 验证并更新休息时间（保留兼容性）
+    private func validateAndUpdateRestInterval() {
+        needsSave = true
+        saveRestIntervalIfNeeded()
     }
     
     private func updateTimerColor(_ colorType: TimerItem.TimerColor.ColorType) {
@@ -662,6 +809,31 @@ struct TimerItemCard: View {
     }
     
     private func toggleTimerRunning() {
+        // 先主动移除焦点，确保输入框触发保存
+        if isIntervalFocused {
+            focusedField.wrappedValue = nil
+            // 等待焦点移除后再保存
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                self.saveIntervalIfNeeded()
+                self.performToggleTimer()
+            }
+        } else if isRestFocused {
+            focusedField.wrappedValue = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                self.saveRestIntervalIfNeeded()
+                self.performToggleTimer()
+            }
+        } else {
+            // 没有焦点时直接执行
+            if needsSave {
+                saveIntervalIfNeeded()
+                saveRestIntervalIfNeeded()
+            }
+            performToggleTimer()
+        }
+    }
+    
+    private func performToggleTimer() {
         if timer.isRunning {
             // 停止当前计时器
             controller.stopTimer(timer.id, settings: settings)
