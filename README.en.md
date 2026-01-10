@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <img src="loopRemider/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="100" alt="Loop Reminder">
+  <img src="LoopReminder/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="100" alt="Loop Reminder">
   <br>
   Loop Reminder
   <br>

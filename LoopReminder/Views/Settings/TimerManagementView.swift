@@ -1,6 +1,6 @@
 //
 //  TimerManagementView.swift
-//  loopRemider
+//  LoopReminder
 //
 //  计时器管理页面
 //

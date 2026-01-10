@@ -31,7 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct loopRemiderApp: App {
+struct LoopReminderApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var settings = AppSettings()
     @StateObject private var controller = ReminderController()

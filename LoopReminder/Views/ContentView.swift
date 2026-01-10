@@ -5,7 +5,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("loopRemider")
+            Text("Loop Reminder")
                 .font(.title2)
                 .bold()
 

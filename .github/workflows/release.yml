@@ -59,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
           ARCHIVE_PATH="$PWD/build/LoopReminder.xcarchive"
-          xcodebuild -project loopRemider.xcodeproj \
+          xcodebuild -project LoopReminder.xcodeproj \
             -scheme LoopReminder \
             -configuration Release \
             -archivePath "$ARCHIVE_PATH" \
@@ -72,7 +72,7 @@ jobs:
         run: |
           set -euo pipefail
           APP_PATH="$PWD/build/LoopReminder.xcarchive/Products/Applications/LoopReminder.app"
-          codesign -s "-" --force --deep --timestamp=none --options runtime --entitlements loopRemider/loopRemider.entitlements "$APP_PATH"
+          codesign -s "-" --force --deep --timestamp=none --options runtime --entitlements LoopReminder/LoopReminder.entitlements "$APP_PATH"
           codesign -vvv --deep --strict "$APP_PATH"
 
       - name: Zip app

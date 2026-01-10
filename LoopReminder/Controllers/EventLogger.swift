@@ -10,7 +10,7 @@ final class EventLogger {
     
     private init() {
         let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appDir = supportDir.appendingPathComponent("loopRemider", isDirectory: true)
+        let appDir = supportDir.appendingPathComponent("LoopReminder", isDirectory: true)
         try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true, attributes: nil)
         self.fileURL = appDir.appendingPathComponent("logs.txt")
         
