@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "AC6290132EE27F5A0026BB1C"
-               BuildableName = "loopRemider.app"
-               BlueprintName = "loopRemider"
+               BuildableName = "LoopReminder.app"
+               BlueprintName = "LoopReminder"
                ReferencedContainer = "container:loopRemider.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AC6290132EE27F5A0026BB1C"
-            BuildableName = "loopRemider.app"
-            BlueprintName = "loopRemider"
+            BuildableName = "LoopReminder.app"
+            BlueprintName = "LoopReminder"
             ReferencedContainer = "container:loopRemider.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AC6290132EE27F5A0026BB1C"
-            BuildableName = "loopRemider.app"
-            BlueprintName = "loopRemider"
+            BuildableName = "LoopReminder.app"
+            BlueprintName = "LoopReminder"
             ReferencedContainer = "container:loopRemider.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>SUFeedURL</key>
+	<string>https://peixinlu.github.io/LoopReminder/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>yJiJfPNkj8fMPqw61dqnpJAWQvUKHyq3+SjdoKuMcx4=</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

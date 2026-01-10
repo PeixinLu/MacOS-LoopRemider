@@ -12,16 +12,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		AC6290142EE27F5A0026BB1C /* loopRemider.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = loopRemider.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC6290142EE27F5A0026BB1C /* LoopReminder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LoopReminder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AC6290232EE285430026BB1C /* Exceptions for "loopRemider" folder in "loopRemider" target */ = {
+		AC6290232EE285430026BB1C /* Exceptions for "loopRemider" folder in "LoopReminder" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = AC6290132EE27F5A0026BB1C /* loopRemider */;
+			target = AC6290132EE27F5A0026BB1C /* LoopReminder */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -29,7 +29,7 @@
 		AC6290162EE27F5A0026BB1C /* loopRemider */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AC6290232EE285430026BB1C /* Exceptions for "loopRemider" folder in "loopRemider" target */,
+				AC6290232EE285430026BB1C /* Exceptions for "loopRemider" folder in "LoopReminder" target */,
 			);
 			path = loopRemider;
 			sourceTree = "<group>";
@@ -60,7 +60,7 @@
 		AC6290152EE27F5A0026BB1C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AC6290142EE27F5A0026BB1C /* loopRemider.app */,
+				AC6290142EE27F5A0026BB1C /* LoopReminder.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,9 +68,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AC6290132EE27F5A0026BB1C /* loopRemider */ = {
+		AC6290132EE27F5A0026BB1C /* LoopReminder */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AC62901F2EE27F5C0026BB1C /* Build configuration list for PBXNativeTarget "loopRemider" */;
+			buildConfigurationList = AC62901F2EE27F5C0026BB1C /* Build configuration list for PBXNativeTarget "LoopReminder" */;
 			buildPhases = (
 				AC6290102EE27F5A0026BB1C /* Sources */,
 				AC6290112EE27F5A0026BB1C /* Frameworks */,
@@ -83,13 +83,13 @@
 			fileSystemSynchronizedGroups = (
 				AC6290162EE27F5A0026BB1C /* loopRemider */,
 			);
-			name = loopRemider;
+			name = LoopReminder;
 			packageProductDependencies = (
 				AC4501092EE96FC30037C74C /* LaunchAtLogin */,
 				965103052F123099002AEE46 /* Sparkle */,
 			);
-			productName = loopRemider;
-			productReference = AC6290142EE27F5A0026BB1C /* loopRemider.app */;
+			productName = LoopReminder;
+			productReference = AC6290142EE27F5A0026BB1C /* LoopReminder.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -125,7 +125,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AC6290132EE27F5A0026BB1C /* loopRemider */,
+				AC6290132EE27F5A0026BB1C /* LoopReminder */,
 			);
 		};
 /* End PBXProject section */
@@ -349,7 +349,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AC62901F2EE27F5C0026BB1C /* Build configuration list for PBXNativeTarget "loopRemider" */ = {
+		AC62901F2EE27F5C0026BB1C /* Build configuration list for PBXNativeTarget "LoopReminder" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AC6290202EE27F5C0026BB1C /* Debug */,
