@@ -37,8 +37,11 @@ struct TimerManagementView: View {
             GeometryReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                        // 添加计时器按钮
-                        addTimerButton
+                        // 操作按钮组
+                        HStack(spacing: DesignTokens.Spacing.sm) {
+                            startStopAllButton
+                            addTimerButton
+                        }
                         
                         // 计时器列表
                         ForEach($settings.timers) { $timer in
@@ -99,6 +102,25 @@ struct TimerManagementView: View {
         }
     }
     
+    // MARK: - Buttons
+    
+    private var startStopAllButton: some View {
+        let hasRunningTimer = settings.timers.contains(where: { $0.isRunning })
+        
+        return Button {
+            toggleAllTimers()
+        } label: {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                Image(systemName: hasRunningTimer ? "pause.circle.fill" : "play.circle.fill")
+                Text(hasRunningTimer ? "全部停止" : "全部启动")
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DesignTokens.Spacing.xs)
+        }
+        .controlSize(.large)
+        .tint(hasRunningTimer ? .orange : .green)
+    }
+    
     // MARK: - Add Timer Button
     
     private var addTimerButton: some View {
@@ -117,6 +139,22 @@ struct TimerManagementView: View {
     }
     
     // MARK: - Helper Methods
+    
+    private func toggleAllTimers() {
+        let hasRunningTimer = settings.timers.contains(where: { $0.isRunning })
+        
+        if hasRunningTimer {
+            // 停止所有正在运行的计时器
+            for timer in settings.timers where timer.isRunning {
+                controller.stopTimer(timer.id, settings: settings)
+            }
+            settings.isRunning = false
+        } else {
+            // 启动所有有效的计时器
+            settings.isRunning = true
+            controller.start(settings: settings)
+        }
+    }
     
     private func addNewTimer() {
         let timerNumber = settings.timers.count + 1
