@@ -1,8 +1,8 @@
 {
   "notification": {
     "title": "提醒",
-    "body": "起来活动一下",
-    "emoji": "🔔"
+    "body": "记得喝杯水",
+    "emoji": "💧"
   },
   "interval": {
     "default": 1800,
@@ -17,24 +17,24 @@
   "overlay": {
     "position": "右上角",
     "color": "黑色",
-    "opacity": 0.85,
+    "opacity": 0.3,
     "stayDuration": 5.0,
     "enableFadeOut": false,
     "fadeOutDelay": 2.0,
     "fadeOutDuration": 2.0,
     "width": 350.0,
-    "height": 120.0,
+    "height": 70.0,
     "minWidth": 50.0,
     "minHeight": 30.0,
     "maxWidth": 600.0,
     "maxHeight": 300.0,
-    "titleFontSize": 17.0,
-    "bodyFontSize": 14.0,
+    "titleFontSize": 14.0,
+    "bodyFontSize": 12.0,
     "iconSize": 40.0,
-    "cornerRadius": 12.0,
+    "cornerRadius": 24.0,
     "edgePadding": 20.0,
     "contentSpacing": 12.0,
-    "useBlur": false,
+    "useBlur": true,
     "blurIntensity": 0.75,
     "customColor": {
       "r": 0.5,
@@ -43,7 +43,7 @@
     }
   },
   "animation": {
-    "style": "淡化"
+    "style": "缩放"
   },
   "screen": {
     "selection": "活跃屏幕"
